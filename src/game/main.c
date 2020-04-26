@@ -13,6 +13,10 @@
 #include "main.h"
 #include "thread6.h"
 
+#ifdef PC_PORT
+#include <stdlib.h>
+#endif
+
 // Message IDs
 #define MESG_SP_COMPLETE 100
 #define MESG_DP_COMPLETE 101
@@ -100,6 +104,7 @@ void handle_debug_key_sequences(void) {
     }
 }
 
+#ifndef PC_PORT
 void unknown_main_func(void) {
     // uninitialized
     OSTime time;
@@ -114,6 +119,7 @@ void unknown_main_func(void) {
     sprintf(NULL, NULL);
 #pragma GCC diagnostic pop
 }
+#endif
 
 void stub_main_1(void) {
 }
@@ -470,3 +476,17 @@ void main_func(void) {
     create_thread(&gIdleThread, 1, thread1_idle, NULL, gIdleThreadStack + 0x800, 100);
     osStartThread(&gIdleThread);
 }
+
+#ifdef PC_PORT
+void pc_port_main_func(void) {
+  u32 size = 2 * (SEG_POOL_END - SEG_POOL_START);
+  void *start = (void *) malloc(size);
+  void *end = (void *) start + size;
+
+  main_pool_init(start, end);
+  gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
+
+  thread5_game_loop(NULL);
+}
+
+#endif

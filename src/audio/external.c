@@ -839,8 +839,10 @@ struct SPTask *create_next_audio_frame_task(void) {
     gAudioTask->msg = NULL;
 
     task = &gAudioTask->task.t;
+
     task->type = M_AUDTASK;
     task->flags = flags;
+#ifndef PC_PORT
     task->ucode_boot = rspF3DBootStart;
     task->ucode_boot_size = (u8 *) rspF3DBootEnd - (u8 *) rspF3DBootStart;
     task->ucode = rspAspMainStart;
@@ -853,6 +855,7 @@ struct SPTask *create_next_audio_frame_task(void) {
     task->output_buff_size = NULL;
     task->data_ptr = gAudioCmdBuffers[index];
     task->data_size = writtenCmds * sizeof(u64);
+#endif
 
     // The audio task never yields, so having a yield buffer is pointless.
     // This wastefulness was fixed in US.
@@ -870,6 +873,9 @@ struct SPTask *create_next_audio_frame_task(void) {
 #endif
 
 void play_sound(s32 soundBits, f32 *pos) {
+#ifdef DISABLE_SOUND
+    return;
+#endif
     sSoundRequests[sSoundRequestCount].soundBits = soundBits;
     sSoundRequests[sSoundRequestCount].position = pos;
     sSoundRequestCount++;
@@ -1658,6 +1664,9 @@ void sequence_player_fade_out(u8 player, u16 fadeTimer) {
 }
 
 void fade_volume_scale(u8 player, u8 targetScale, u16 fadeTimer) {
+#ifdef DISABLE_SOUND
+    return;
+#endif
     u8 i;
     for (i = 0; i < CHANNELS_MAX; i++) {
         fade_channel_volume_scale(player, i, targetScale, fadeTimer);
@@ -2046,6 +2055,9 @@ void func_803205E8(u32 soundBits, f32 *vec) {
 }
 
 void func_803206F8(f32 *arg0) {
+#ifdef PC_PORT
+    (void)arg0;
+#else
     u8 bankIndex;
     u8 item;
 
@@ -2059,9 +2071,13 @@ void func_803206F8(f32 *arg0) {
             item = gSoundBanks[bankIndex][item].next;
         }
     }
+#endif
 }
 
 static void func_803207DC(u8 bankIndex) {
+#ifdef DISABLE_SOUND
+    return;
+#endif
     u8 item = gSoundBanks[bankIndex][0].next;
 
     while (item != 0xff) {

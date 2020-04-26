@@ -1,6 +1,7 @@
 #include "new_func.h"
 
 void func_802F4A20() {
+#ifndef PC_PORT
     __OSTranxInfo *sp1c;
     volatile u32 sp18;
     //  lui   $t6, %hi(__osDiskHandle) # $t6, 0x8033
@@ -77,6 +78,7 @@ void func_802F4A20() {
     D_8030208C |= 0x00100401; //TODO: fix magic numbers
     //  jr    $ra
     //   addiu $sp, $sp, 0x20
+#endif
 }
 
 typedef struct OSEventMessageStruct_0_s {
@@ -86,6 +88,7 @@ typedef struct OSEventMessageStruct_0_s {
 
 extern OSEventMessageStruct_0 D_80363830[16]; // should be OS_NUM_EVENTS + 1 I think
 void func_802F4B08() {
+#ifndef PC_PORT
     OSEventMessageStruct_0 *sp2c;
     OSMesgQueue *sp28;
     u32 sp24;
@@ -167,4 +170,5 @@ void func_802F4B08() {
     //  nop
     //  nop
     //  nop
+#endif
 }

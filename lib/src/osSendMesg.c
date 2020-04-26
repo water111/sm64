@@ -1,6 +1,7 @@
 #include "libultra_internal.h"
 
 s32 osSendMesg(OSMesgQueue *mq, OSMesg msg, s32 flag) {
+#ifndef PC_PORT
     register u32 int_disabled;
     register s32 index;
     register OSThread *s2;
@@ -26,5 +27,10 @@ s32 osSendMesg(OSMesgQueue *mq, OSMesg msg, s32 flag) {
     }
 
     __osRestoreInt(int_disabled);
+#else
+  (void)mq;
+  (void)msg;
+  (void)flag;
+#endif
     return 0;
 }

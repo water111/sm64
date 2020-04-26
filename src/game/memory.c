@@ -10,6 +10,13 @@
 #include "segments.h"
 #include "memory.h"
 
+#ifdef PC_PORT
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
+#include "pc/cart/pc_cart.h"
+#endif
+
 extern u8 _engineSegmentRomStart[];
 extern u8 _engineSegmentRomEnd[];
 extern u8 gDecompressionHeap[];
@@ -67,8 +74,13 @@ struct MainPoolBlock *sPoolListHeadR;
 static struct MainPoolState *gMainPoolState = NULL;
 
 uintptr_t set_segment_base_addr(s32 segment, void *addr) {
+#ifdef PC_PORT
+    (void)segment;
+    return (uintptr_t)addr;
+#else
     sSegmentTable[segment] = (uintptr_t) addr & 0x1FFFFFFF;
     return sSegmentTable[segment];
+#endif
 }
 
 void *get_segment_base_addr(s32 segment) {
@@ -76,16 +88,25 @@ void *get_segment_base_addr(s32 segment) {
 }
 
 void *segmented_to_virtual(const void *addr) {
+#ifdef PC_PORT
+    return (void*)addr;
+#else
     size_t segment = (uintptr_t) addr >> 24;
     size_t offset = (uintptr_t) addr & 0x00FFFFFF;
 
     return (void *) ((sSegmentTable[segment] + offset) | 0x80000000);
+#endif
 }
 
 void *virtual_to_segmented(u32 segment, const void *addr) {
+#ifdef PC_PORT
+  (void)segment;
+  return (void*)addr;
+#else
     size_t offset = ((uintptr_t) addr & 0x1FFFFFFF) - sSegmentTable[segment];
 
     return (void *) ((segment << 24) + offset);
+#endif
 }
 
 void move_segment_table_to_dmem(void) {
@@ -141,6 +162,9 @@ void *main_pool_alloc(u32 size, u32 side) {
             addr = (u8 *) sPoolListHeadR + 16;
         }
     }
+#ifdef PC_PORT
+    assert(addr);
+#endif
     return addr;
 }
 
@@ -237,10 +261,15 @@ static void dma_read(u8 *dest, u8 *srcStart, u8 *srcEnd) {
     while (size != 0) {
         u32 copySize = (size >= 0x1000) ? 0x1000 : size;
 
+#ifdef PC_PORT
+      for(u64 i = 0; i < copySize; i++) {
+        dest[i] = srcStart[i];
+      }
+#else
         osPiStartDma(&gDmaIoMesg, OS_MESG_PRI_NORMAL, OS_READ, (uintptr_t) srcStart, dest, copySize,
                      &gDmaMesgQueue);
         osRecvMesg(&gDmaMesgQueue, &D_80339BEC, OS_MESG_BLOCK);
-
+#endif
         dest += copySize;
         srcStart += copySize;
         size -= copySize;
@@ -267,6 +296,10 @@ static void *dynamic_dma_read(u8 *srcStart, u8 *srcEnd, u32 side) {
  * address to this block.
  */
 void *load_segment(s32 segment, u8 *srcStart, u8 *srcEnd, u32 side) {
+#ifdef PC_PORT
+  fprintf(stderr, "RELOAD!\n");
+  reload_all();
+#endif
     void *addr = dynamic_dma_read(srcStart, srcEnd, side);
 
     if (addr != NULL) {
@@ -346,6 +379,7 @@ void *load_segment_decompress_heap(u32 segment, u8 *srcStart, u8 *srcEnd) {
 }
 
 void load_engine_code_segment(void) {
+#ifndef PC_PORT
     void *startAddr = (void *) SEG_ENGINE;
     u32 totalSize = SEG_FRAMEBUFFERS - SEG_ENGINE;
     UNUSED u32 alignedSize = ALIGN16(_engineSegmentRomEnd - _engineSegmentRomStart);
@@ -355,6 +389,7 @@ void load_engine_code_segment(void) {
     dma_read(startAddr, _engineSegmentRomStart, _engineSegmentRomEnd);
     osInvalICache(startAddr, totalSize);
     osInvalDCache(startAddr, totalSize);
+#endif
 }
 
 /**

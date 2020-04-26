@@ -27,8 +27,10 @@ s32 osAiSetFrequency(u32 freq) {
     return D_8033491C / (s32) a1;
 }
 
+#ifndef PC_PORT
 // put some extra jr $ra's down there please
 static void filler1(void) {
 }
 static void filler2(void) {
 }
+#endif

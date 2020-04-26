@@ -38,7 +38,7 @@
 // the large length difference between options.
 // sSoundTextY unused (EU supports its existence).
 static s16 sSoundTextX;
-static s16 sSoundTextY;
+UNUSED static s16 sSoundTextY;
 #endif
 
 //! @Bug (UB Array Access) For PAL, more buttons were added than the array was extended.

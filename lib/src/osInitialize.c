@@ -38,6 +38,7 @@ extern u32 osResetType;
 extern exceptionPreamble __osExceptionPreamble;
 
 void osInitialize(void) {
+#ifndef PC_PORT
     u32 sp34;
     u32 sp30 = 0;
 
@@ -84,5 +85,6 @@ void osInitialize(void) {
     } else {
         EU_D_80302090 = 0;
     }
+#endif
 #endif
 }

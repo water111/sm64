@@ -406,7 +406,11 @@ void fatal_printf(const char *fmt, ...) {
                         gd_printf("%s", va_arg(vl, char *));
                         break;
                     case 'c':
+#ifdef PC_PORT
+                        gd_printf("%c", va_arg(vl, int));
+#else
                         gd_printf("%c", va_arg(vl, char));
+#endif
                         break;
                     case 'x':
                         gd_printf("%x", va_arg(vl, s32));

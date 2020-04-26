@@ -70,3 +70,11 @@ build/*
 !/sound/**/*custom*/**/*.aiff
 !/assets/**/*custom*.bin
 !/assets/**/*custom*/**/*.bin
+
+# PC Build Stuff
+build_pc/*
+pc_assets/*
+
+# My Junk
+.idea/*
+cmake-build-debug/*

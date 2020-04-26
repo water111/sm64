@@ -11,6 +11,11 @@ u32 D_80334A40 = 0;
 u32 D_80334A44 = 1;
 
 void __osSyncPutChars(s32 a0, s32 a1, u8 *a2) {
+#ifdef PC_PORT
+    (void)a0;
+    (void)a1;
+    (void)a2;
+#else
     unkStruct sp24;
     s32 sp20;
     u32 sp1c;
@@ -35,4 +40,5 @@ void __osSyncPutChars(s32 a0, s32 a1, u8 *a2) {
     D_80334A44++;
 
     __osRestoreInt(sp1c);
+#endif
 }

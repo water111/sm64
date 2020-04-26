@@ -55,6 +55,9 @@ int detect_object_hitbox_overlap(struct Object *a, struct Object *b) {
         b->numCollidedObjs++;
         return 1;
     }
+#ifdef PC_PORT
+    return 0;
+#endif
 
     //! no return value
 }
@@ -87,7 +90,9 @@ int detect_object_hurtbox_overlap(struct Object *a, struct Object *b) {
         }
         return 1;
     }
-
+#ifdef PC_PORT
+  return 0;
+#endif
     //! no return value
 }
 

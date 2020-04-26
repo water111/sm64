@@ -21,6 +21,10 @@
 #include "surface_collision.h"
 #include "surface_load.h"
 
+#ifdef PRINT_LEVEL_SCRIPT
+#include <stdio.h>
+#endif
+
 #define CMD_SIZE_SHIFT (sizeof(void *) >> 3)
 #define CMD_PROCESS_OFFSET(offset) ((offset & 3) | ((offset & ~3) << CMD_SIZE_SHIFT))
 
@@ -264,22 +268,29 @@ static void level_cmd_pop_pool_state(void) {
 }
 
 static void level_cmd_load_to_fixed_address(void) {
+#ifndef PC_PORT
     load_to_fixed_pool_addr(CMD_GET(void *, 4), CMD_GET(void *, 8), CMD_GET(void *, 12));
+#endif
     sCurrentCmd = CMD_NEXT;
 }
 
 static void level_cmd_load_raw(void) {
+#ifndef PC_PORT
     load_segment(CMD_GET(s16, 2), CMD_GET(void *, 4), CMD_GET(void *, 8),
             MEMORY_POOL_LEFT);
+#endif
     sCurrentCmd = CMD_NEXT;
 }
 
 static void level_cmd_load_mio0(void) {
+#ifndef PC_PORT
     load_segment_decompress(CMD_GET(s16, 2), CMD_GET(void *, 4), CMD_GET(void *, 8));
+#endif
     sCurrentCmd = CMD_NEXT;
 }
 
 static void level_cmd_load_mario_head(void) {
+#ifndef NO_GODDARD
     // TODO: Fix these hardcoded sizes
     void *addr = main_pool_alloc(DOUBLE_SIZE_ON_64_BIT(0xE1000), MEMORY_POOL_LEFT);
     if (addr != NULL) {
@@ -290,12 +301,14 @@ static void level_cmd_load_mario_head(void) {
         gdm_maketestdl(CMD_GET(s16, 2));
     } else {
     }
-
+#endif
     sCurrentCmd = CMD_NEXT;
 }
 
 static void level_cmd_load_mio0_texture(void) {
+#ifndef PC_PORT
     load_segment_decompress_heap(CMD_GET(s16, 2), CMD_GET(void *, 4), CMD_GET(void *, 8));
+#endif
     sCurrentCmd = CMD_NEXT;
 }
 
@@ -802,11 +815,81 @@ static void (*LevelScriptJumpTable[])(void) = {
     /*3C*/ level_cmd_get_or_set_var,
 };
 
+#ifdef PRINT_LEVEL_SCRIPT
+  const char* script_type_names[] = {
+    "level_cmd_load_and_execute",
+    "level_cmd_exit_and_execute",
+    "level_cmd_exit",
+    "level_cmd_sleep",
+    "level_cmd_sleep2",
+    "level_cmd_jump",
+    "level_cmd_jump_and_link",
+    "level_cmd_return",
+    "level_cmd_jump_and_link_push_arg",
+    "level_cmd_jump_repeat",
+    "level_cmd_loop_begin",
+    "level_cmd_loop_until",
+    "level_cmd_jump_if",
+    "level_cmd_jump_and_link_if",
+    "level_cmd_skip_if",
+    "level_cmd_skip",
+    "level_cmd_skippable_nop",
+    "level_cmd_call",
+    "level_cmd_call_loop",
+    "level_cmd_set_register",
+    "level_cmd_push_pool_state",
+    "level_cmd_pop_pool_state",
+    "level_cmd_load_to_fixed_address",
+    "level_cmd_load_raw",
+    "level_cmd_load_mio0",
+    "level_cmd_load_mario_head",
+    "level_cmd_load_mio0_texture",
+    "level_cmd_init_level",
+    "level_cmd_clear_level",
+    "level_cmd_alloc_level_pool",
+    "level_cmd_free_level_pool",
+    "level_cmd_begin_area",
+    "level_cmd_end_area",
+    "level_cmd_load_model_from_dl",
+    "level_cmd_load_model_from_geo",
+    "level_cmd_23",
+    "level_cmd_place_object",
+    "level_cmd_init_mario",
+    "level_cmd_create_warp_node",
+    "level_cmd_create_painting_warp_node",
+    "level_cmd_create_instant_warp",
+    "level_cmd_load_area",
+    "level_cmd_unload_area",
+    "level_cmd_set_mario_start_pos",
+    "level_cmd_2C",
+    "level_cmd_2D",
+    "level_cmd_set_terrain_data",
+    "level_cmd_set_rooms",
+    "level_cmd_show_dialog",
+    "level_cmd_set_terrain_type",
+    "level_cmd_nop",
+    "level_cmd_set_transition",
+    "level_cmd_set_blackout",
+    "level_cmd_set_gamma",
+    "level_cmd_set_music",
+    "level_cmd_set_menu_music",
+    "level_cmd_38",
+    "level_cmd_set_macro_objects",
+    "level_cmd_3A",
+    "level_cmd_create_whirlpool",
+    "level_cmd_get_or_set_var",
+  };
+#endif
+
 struct LevelCommand *level_script_execute(struct LevelCommand *cmd) {
     sScriptStatus = SCRIPT_RUNNING;
     sCurrentCmd = cmd;
 
     while (sScriptStatus == SCRIPT_RUNNING) {
+#ifdef PRINT_LEVEL_SCRIPT
+        if(sCurrentCmd->type != 0x12)
+          printf("Level script: %s\n", script_type_names[sCurrentCmd->type]);
+#endif
         LevelScriptJumpTable[sCurrentCmd->type]();
     }
 

@@ -8,4 +8,9 @@
 #define const
 #endif
 
+#ifdef PC_PORT
+// I'm sorry.
+#define const
+#endif
+
 #endif

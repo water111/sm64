@@ -26,6 +26,13 @@ const double D_80338670[] = { 10e0L, 10e1L, 10e3L, 10e7L, 10e15L, 10e31L, 10e63L
 #define _CSIGN 1
 #define _ILONG 0
 #define _MBMAX 8
+
+/* PC PORT */
+#ifdef PC_PORT
+// Avoid a warning related to redefining NAN
+#undef NAN
+#endif
+
 #define NAN 2
 #define INF 1
 #define FINITE -1

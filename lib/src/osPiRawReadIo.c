@@ -4,6 +4,11 @@
 extern u32 osRomBase;
 
 s32 osPiRawReadIo(u32 a0, u32 *a1) {
+#ifdef PC_PORT
+    (void)a0;
+    (void)a1;
+    return 0;
+#else
     register int status;
     status = HW_REG(PI_STATUS_REG, u32);
     while (status & (PI_STATUS_BUSY | PI_STATUS_IOBUSY | PI_STATUS_ERROR)) {
@@ -11,4 +16,5 @@ s32 osPiRawReadIo(u32 a0, u32 *a1) {
     }
     *a1 = HW_REG(osRomBase | a0, u32);
     return 0;
+#endif
 }

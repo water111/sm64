@@ -21,6 +21,7 @@ void __osTimerServicesInit() {
 }
 
 void __osTimerInterrupt() {
+#ifndef PC_PORT
     OSTimer *sp24;
     u32 sp20;
     u32 sp1c;
@@ -55,18 +56,24 @@ void __osTimerInterrupt() {
             }
         }
     }
+#endif
 }
 
 void __osSetTimerIntr(u64 a0) {
+#ifndef PC_PORT
     u64 tmp;
     s32 intDisabled = __osDisableInt();
     D_80365DB0 = osGetCount();
     tmp = a0 + D_80365DB0;
     __osSetCompare(tmp);
     __osRestoreInt(intDisabled);
+#else
+    (void)a0;
+#endif
 }
 
 u64 __osInsertTimer(OSTimer *a0) {
+#ifndef PC_PORT
     OSTimer *sp34;
     u64 sp28;
     s32 intDisabled;
@@ -85,4 +92,8 @@ u64 __osInsertTimer(OSTimer *a0) {
     sp34->prev = a0;
     __osRestoreInt(intDisabled);
     return sp28;
+#else
+    (void)a0;
+    return 0;
+#endif
 }

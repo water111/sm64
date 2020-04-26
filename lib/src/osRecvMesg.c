@@ -1,6 +1,7 @@
 #include "libultra_internal.h"
 
 s32 osRecvMesg(OSMesgQueue *mq, OSMesg *msg, s32 flag) {
+#ifndef PC_PORT
     register u32 int_disabled;
     register OSThread *thread;
     int_disabled = __osDisableInt();
@@ -27,5 +28,10 @@ s32 osRecvMesg(OSMesgQueue *mq, OSMesg *msg, s32 flag) {
     }
 
     __osRestoreInt(int_disabled);
+#else
+    (void)mq;
+    (void)msg;
+    (void)flag;
+#endif
     return 0;
 }

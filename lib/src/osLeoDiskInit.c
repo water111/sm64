@@ -22,8 +22,10 @@ OSPiHandle *osLeoDiskInit() {
     HW_REG(PI_BSD_DOM2_RLS_REG, u32) = LeoDiskHandle.relDuration;
     bzero(&LeoDiskHandle.transferInfo, sizeof(__OSTranxInfo));
     sp1c = __osDisableInt();
+#ifndef PC_PORT
     LeoDiskHandle.next = D_80302DFC;
     D_80302DFC = &LeoDiskHandle;
+#endif
     __osDiskHandle = &LeoDiskHandle;
     __osRestoreInt(sp1c);
     return &LeoDiskHandle;

@@ -30,6 +30,10 @@ void manta_ray_move(void) {
     s16 sp1E;
     s32 sp18;
 
+#ifdef PC_PORT
+    sp18 = 0;
+#endif
+
     sp1E = o->header.gfx.unk38.animFrame;
     gCurrentObject->oPathedWaypointsS16 = &D_803316A8;
     sp18 = cur_obj_follow_path(sp18);

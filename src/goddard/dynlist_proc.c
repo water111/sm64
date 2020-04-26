@@ -1800,6 +1800,9 @@ struct ObjGroup *d_get_att_objgroup(void) {
                          sDynListCurInfo->name, sDynListCurObj->type);
     }
     // No null return due to `fatal_printf()` being a non-returning function?
+#ifdef PC_PORT
+  return NULL;
+#endif
 }
 
 /**
@@ -1822,6 +1825,9 @@ struct GdObj *d_get_att_to_obj(void) {
                          sDynListCurInfo->name, sDynListCurObj->type);
     }
     // No null return due to `fatal_printf()` being a non-returning function?
+#ifdef PC_PORT
+  return NULL;
+#endif
 }
 
 /**
@@ -2091,6 +2097,9 @@ struct GdVec3f *d_get_world_pos_ptr(void) {
                          sDynListCurInfo->name, sDynListCurObj->type);
     }
     // No null return due to `fatal_printf()` being a non-returning function?
+#ifdef PC_PORT
+  return NULL;
+#endif
 }
 
 /**
@@ -3006,6 +3015,9 @@ Mat4f *d_get_rot_mtx_ptr(void) {
                          sDynListCurInfo->name, sDynListCurObj->type);
     }
     // No null return due to `fatal_printf()` being a non-returning function?
+#ifdef PC_PORT
+  return NULL;
+#endif
 }
 
 /**
@@ -3063,6 +3075,9 @@ Mat4f *d_get_matrix_ptr(void) {
                          sDynListCurInfo->name, sDynListCurObj->type);
     }
     // No null return due to `fatal_printf()` being a non-returning function?
+#ifdef PC_PORT
+  return NULL;
+#endif
 }
 
 /**
@@ -3088,6 +3103,9 @@ Mat4f *d_get_idn_mtx_ptr(void) {
                          sDynListCurInfo->name, sDynListCurObj->type);
     }
     // No null return due to `fatal_printf()` being a non-returning function?
+#ifdef PC_PORT
+  return NULL;
+#endif
 }
 
 /**

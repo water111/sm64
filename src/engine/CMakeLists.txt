@@ -1,0 +1,11 @@
+add_library(engine
+        SHARED
+        behavior_script.c
+        geo_layout.c
+        graph_node.c
+        graph_node_manager.c
+        level_script.c
+        math_util.c
+        surface_collision.c
+        surface_load.c
+        )

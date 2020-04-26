@@ -19,6 +19,15 @@
 #include "main_entry.h"
 #include "thread6.h"
 #include <prevent_bss_reordering.h>
+#include <stdio.h>
+
+#ifdef PC_PORT
+#include "pc/controller/pc_cont.h"
+#endif
+
+#ifdef PC_PORT_GFX
+#include "pc/graphics/pc_gfx.h"
+#endif
 
 // FIXME: I'm not sure all of these variables belong in this file, but I don't
 // know of a good way to split them
@@ -207,6 +216,7 @@ void make_viewport_clip_rect(Vp *viewport) {
  * other microcodes (i.e. S2DEX).
  */
 void create_task_structure(void) {
+#ifndef PC_PORT
     s32 entries = gDisplayListHead - gGfxPool->buffer;
 
     gGfxSPTask->msgqueue = &D_80339CB8;
@@ -236,6 +246,7 @@ void create_task_structure(void) {
     gGfxSPTask->task.t.data_size = entries * sizeof(Gfx);
     gGfxSPTask->task.t.yield_data_ptr = (u64 *) gGfxSPTaskYieldBuffer;
     gGfxSPTask->task.t.yield_data_size = OS_YIELD_DATA_SIZE;
+#endif
 }
 
 /** Starts rendering the scene. */
@@ -325,6 +336,10 @@ void display_and_vsync(void) {
     osViSwapBuffer((void *) PHYSICAL_TO_VIRTUAL(gPhysicalFrameBuffers[sCurrFBNum]));
     profiler_log_thread5_time(THREAD5_END);
     osRecvMesg(&gGameVblankQueue, &D_80339BEC, OS_MESG_BLOCK);
+#ifdef PC_PORT_GFX
+  pc_gfx_set_display_list(gGfxPool->buffer);
+#endif
+
     if (++sCurrFBNum == 3) {
         sCurrFBNum = 0;
     }
@@ -336,7 +351,7 @@ void display_and_vsync(void) {
 
 // this function records distinct inputs over a 255-frame interval to RAM locations and was likely
 // used to record the demo sequences seen in the final game. This function is unused.
-static void record_demo(void) {
+UNUSED static void record_demo(void) {
     // record the player's button mask and current rawStickX and rawStickY.
     u8 buttonMask =
         ((gPlayer1Controller->buttonDown & (A_BUTTON | B_BUTTON | Z_TRIG | START_BUTTON)) >> 8)
@@ -484,6 +499,9 @@ void read_controller_inputs(void) {
         release_rumble_pak_control();
 #endif
     }
+#ifdef PC_PORT
+    pc_gfx_read_controllers(&gControllerPads[0]);
+#endif
     run_demo_inputs();
 
     for (i = 0; i < 2; i++) {
@@ -531,11 +549,20 @@ void init_controllers(void) {
     // init the controllers.
     gControllers[0].statusData = &gControllerStatuses[0];
     gControllers[0].controllerData = &gControllerPads[0];
+#ifndef PC_PORT
     osContInit(&gSIEventMesgQueue, &gControllerBits, &gControllerStatuses[0]);
+#else
+    gControllerBits = 1;
+#endif
 
     // strangely enough, the EEPROM probe for save data is done in this function.
     // save pak detection?
+#ifdef PC_PORT
+    // For now, just say it fails.
+    gEepromProbe = 0;
+#else
     gEepromProbe = osEepromProbe(&gSIEventMesgQueue);
+#endif
 
     // loop over the 4 ports and link the controller structs to the appropriate
     // status and pad. Interestingly, although there are pointers to 3 controllers,
@@ -544,7 +571,11 @@ void init_controllers(void) {
     // cannot be used, despite being referenced in various code.
     for (cont = 0, port = 0; port < 4 && cont < 2; port++) {
         // is controller plugged in?
+#ifdef PC_PORT
+      if(cont == 0 && port == 0){
+#else
         if (gControllerBits & (1 << port)) {
+#endif
             // the game allows you to have just 1 controller plugged
             // into any port in order to play the game. this was probably
             // so if any of the ports didnt work, you can have controllers
@@ -574,8 +605,10 @@ void setup_game_memory(void) {
     D_80339CF4 = main_pool_alloc(2048, MEMORY_POOL_LEFT);
     set_segment_base_addr(24, (void *) D_80339CF4);
     func_80278A78(&gDemo, gDemoInputs, D_80339CF4);
+#ifndef PC_PORT
     load_segment(0x10, _entrySegmentRomStart, _entrySegmentRomEnd, MEMORY_POOL_LEFT);
     load_segment_decompress(2, _segment2_mio0SegmentRomStart, _segment2_mio0SegmentRomEnd);
+#endif
 }
 
 // main game loop thread. runs forever as long as the game
@@ -616,7 +649,9 @@ void thread5_game_loop(UNUSED void *arg) {
 #ifdef VERSION_SH
             block_until_rumble_pak_free();
 #endif
+#ifndef PC_PORT
             osContStartReadData(&gSIEventMesgQueue);
+#endif
         }
 
         audio_game_loop_tick();

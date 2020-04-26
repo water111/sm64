@@ -1,10 +1,12 @@
 #include "libultra_internal.h"
 
 void func_802F71F0() {
+#ifndef PC_PORT
     register u32 s0 = __osDisableInt();
     D_803348A0->state = OS_STATE_RUNNABLE;
     __osEnqueueAndYield(&D_80334898);
     __osRestoreInt(s0);
+#endif
 }
 /*
 / 0B69F0 802F71F0 27BDFFD8 /  addiu $sp, $sp, -0x28

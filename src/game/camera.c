@@ -700,6 +700,9 @@ f32 calc_y_to_curr_floor(f32 *posOff, f32 posMul, f32 posBound, f32 *focOff, f32
     if (*focOff < -focBound) {
         *focOff = -focBound;
     }
+#ifdef PC_PORT
+    return 0.f;
+#endif
 }
 
 void focus_on_mario(Vec3f focus, Vec3f pos, f32 posYOff, f32 focYOff, f32 dist, s16 pitch, s16 yaw) {
@@ -1704,9 +1707,12 @@ struct ParallelTrackingPoint sBBHLibraryParTrackPath[] = {
 };
 
 s32 unused_update_mode_5_camera(UNUSED struct Camera *c, UNUSED Vec3f focus, UNUSED Vec3f pos) {
+#ifdef PC_PORT
+    return 0;
+#endif
 }
 
-static void stub_camera_1(UNUSED s32 unused) {
+UNUSED static void stub_camera_1(UNUSED s32 unused) {
 }
 
 void mode_boss_fight_camera(struct Camera *c) {
@@ -2029,6 +2035,9 @@ void mode_behind_mario_camera(struct Camera *c) {
 }
 
 s32 nop_update_water_camera(UNUSED struct Camera *c, UNUSED Vec3f focus, UNUSED Vec3f pos) {
+#ifdef PC_PORT
+  return 0;
+#endif
 }
 
 /**
@@ -4945,7 +4954,9 @@ s32 radial_camera_input(struct Camera *c, UNUSED f32 unused) {
             play_sound_cbutton_down();
         }
     }
-
+#ifdef PC_PORT
+    dummy = 0;
+#endif
     //! returning uninitialized variable
     return dummy;
 }
@@ -5316,7 +5327,7 @@ void set_focus_rel_mario(struct Camera *c, f32 leftRight, f32 yOff, f32 forwBack
  * @param forwBack offset to mario's front/back, relative to his faceAngle
  * @param yawOff offset to mario's faceAngle, changes the direction of `leftRight` and `forwBack`
  */
-static void unused_set_pos_rel_mario(struct Camera *c, f32 leftRight, f32 yOff, f32 forwBack, s16 yawOff) {
+UNUSED static void unused_set_pos_rel_mario(struct Camera *c, f32 leftRight, f32 yOff, f32 forwBack, s16 yawOff) {
     u16 yaw = sMarioCamState->faceAngle[1] + yawOff;
 
     c->pos[0] = sMarioCamState->pos[0] + forwBack * sins(yaw) + leftRight * coss(yaw);
@@ -7200,7 +7211,7 @@ void cutscene_unsoften_music(UNUSED struct Camera *c) {
     sequence_player_unlower(SEQ_PLAYER_LEVEL, 60);
 }
 
-static void stub_camera_5(UNUSED struct Camera *c) {
+UNUSED static void stub_camera_5(UNUSED struct Camera *c) {
 }
 
 BAD_RETURN(s32) cutscene_unused_start(UNUSED struct Camera *c) {
@@ -7686,7 +7697,7 @@ BAD_RETURN(s32) cutscene_dance_rotate_move_towards_mario(struct Camera *c) {
 /**
  * Speculated to be dance-related due to its proximity to the other dance functions
  */
-static BAD_RETURN(s32) cutscene_dance_unused(UNUSED struct Camera *c) {
+UNUSED static BAD_RETURN(s32) cutscene_dance_unused(UNUSED struct Camera *c) {
 }
 
 /**
@@ -8599,7 +8610,7 @@ BAD_RETURN(s32) cutscene_death_stomach_goto_mario(struct Camera *c) {
 /**
  * Ah, yes
  */
-static void unused_water_death_move_to_side_of_mario(struct Camera *c) {
+UNUSED static void unused_water_death_move_to_side_of_mario(struct Camera *c) {
     water_death_move_to_mario_side(c);
 }
 
@@ -8873,7 +8884,7 @@ BAD_RETURN(s32) cutscene_enter_pyramid_top(struct Camera *c) {
     }
 }
 
-static void unused_cutscene_goto_cvar(struct Camera *c) {
+UNUSED static void unused_cutscene_goto_cvar(struct Camera *c) {
     f32 dist;
 
     dist = calc_abs_dist(sCutsceneVars[3].point, sMarioCamState->pos);
@@ -9034,7 +9045,7 @@ BAD_RETURN(s32) cutscene_read_message_start(struct Camera *c) {
     sCutsceneVars[0].angle[0] = 0;
 }
 
-static void unused_cam_to_mario(struct Camera *c) {
+UNUSED static void unused_cam_to_mario(struct Camera *c) {
     Vec3s dir;
 
     vec3s_set(dir, 0, sMarioCamState->faceAngle[1], 0);

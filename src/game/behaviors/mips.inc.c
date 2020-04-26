@@ -114,6 +114,10 @@ void bhv_mips_act_follow_path(void) {
     struct Waypoint **pathBase;
     struct Waypoint *waypoint;
 
+#ifdef PC_PORT
+    followStatus = 0;
+#endif
+
     // Retrieve current waypoint.
     pathBase = segmented_to_virtual(&inside_castle_seg7_trajectory_mips);
     waypoint = segmented_to_virtual(*(pathBase + o->oMipsStartWaypointIndex));

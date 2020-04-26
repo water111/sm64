@@ -6,7 +6,12 @@
 extern u32 (*D_80334920[8])() ;
 
 void EU_D_802f4330(u32 a0, u32 a1(void)) {
+#ifdef PC_PORT
+    (void)a0;
+    (void)a1;
+#else
     register u32 int_disabled = __osDisableInt();
     D_80334920[a0] = a1;
     __osRestoreInt(int_disabled);
+#endif
 }

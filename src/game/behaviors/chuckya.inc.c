@@ -119,6 +119,9 @@ void chuckya_act_0(void) {
     cur_obj_init_animation_with_sound(4);
     if (o->oForwardVel > 1.0f)
         cur_obj_play_sound_1(SOUND_AIR_CHUCKYA_MOVE);
+#ifdef PC_PORT
+    sp3C = 0;
+#endif
     print_debug_bottom_up("fg %d", sp3C);
     print_debug_bottom_up("sp %d", o->oForwardVel);
 }

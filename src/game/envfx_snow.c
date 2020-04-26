@@ -272,7 +272,7 @@ void envfx_update_snow_blizzard(s32 snowCylinderX, s32 snowCylinderY, s32 snowCy
  *  find it. The radius of 3000 units is quite large for that though, covering
  *  more than half of the mirror room.
  */
-static s32 is_in_mystery_snow_area(s32 x, UNUSED s32 y, s32 z) {
+UNUSED static s32 is_in_mystery_snow_area(s32 x, UNUSED s32 y, s32 z) {
     if (sqr(x - 3380) + sqr(z + 520) < sqr(3000)) {
         return 1;
     }
@@ -471,6 +471,7 @@ Gfx *envfx_update_snow(s32 snowMode, Vec3s marioPos, Vec3s camFrom, Vec3s camTo)
     }
 
     for (i = 0; i < gSnowParticleCount; i += 5) {
+
         append_snowflake_vertex_buffer(gfx++, i, (s16 *) &vertex1, (s16 *) &vertex2, (s16 *) &vertex3);
 
         gSP1Triangle(gfx++, 0, 1, 2, 0);
@@ -480,7 +481,7 @@ Gfx *envfx_update_snow(s32 snowMode, Vec3s marioPos, Vec3s camFrom, Vec3s camTo)
         gSP1Triangle(gfx++, 12, 13, 14, 0);
     }
 
-    gSPDisplayList(gfx++, &tiny_bubble_dl_0B006AB0) gSPEndDisplayList(gfx++);
+    gSPDisplayList(gfx++, &tiny_bubble_dl_0B006AB0); gSPEndDisplayList(gfx++);
 
     return gfxStart;
 }

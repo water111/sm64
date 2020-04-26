@@ -1,6 +1,7 @@
 #include "libultra_internal.h"
 
 s32 osJamMesg(OSMesgQueue *mq, OSMesg msg, s32 flag) {
+#ifndef PC_PORT
     register s32 int_disabled;
     int_disabled = __osDisableInt();
     while (mq->validCount >= mq->msgCount) {
@@ -20,5 +21,10 @@ s32 osJamMesg(OSMesgQueue *mq, OSMesg msg, s32 flag) {
         osStartThread(__osPopThread(&mq->mtqueue));
     }
     __osRestoreInt(int_disabled);
+#else
+    (void)mq;
+    (void)msg;
+    (void)flag;
+#endif
     return 0;
 }

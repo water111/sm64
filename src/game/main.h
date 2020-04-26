@@ -73,6 +73,13 @@ extern s8 gShowDebugText;
 extern void set_vblank_handler(s32 a, struct VblankHandler *b, OSMesgQueue *queue, OSMesg *msg);
 extern void dispatch_audio_sptask(struct SPTask *spTask);
 extern void send_display_list(struct SPTask *a);
+
+#ifndef PC_PORT
 extern void main(void);
+#endif
+
+#ifdef PC_PORT
+void pc_port_main_func(void);
+#endif
 
 #endif

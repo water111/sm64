@@ -1,0 +1,6 @@
+add_subdirectory(audio)
+add_subdirectory(buffers)
+add_subdirectory(engine)
+add_subdirectory(game)
+add_subdirectory(goddard)
+add_subdirectory(menu)

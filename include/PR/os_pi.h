@@ -83,5 +83,9 @@ s32 osPiWriteIo(uintptr_t devAddr, u32 data);
 s32 osPiReadIo(uintptr_t devAddr, u32 *data);
 
 s32 osPiRawStartDma(s32 dir, u32 cart_addr, void *dram_addr, size_t size);
+#ifdef PC_PORT
+s32 osEPiRawStartDma(OSPiHandle *piHandle, s32 dir, u32 cart_addr, void *dram_addr, u32 size);
+#else
 s32 osEPiRawStartDma(OSPiHandle *piHandle, s32 dir, u32 cart_addr, void *dram_addr, size_t size);
+#endif
 #endif

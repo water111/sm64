@@ -46,4 +46,14 @@ extern const struct MovtexQuadCollection wdw_movtex_area2_water[];
 // script
 extern const LevelScript level_wdw_entry[];
 
+extern u32 so_wdw_seg7_area_1_collision;
+extern u32 so_wdw_seg7_area_2_collision;
+extern u32 so_wdw_seg7_collision_square_floating_platform;
+extern u32 so_wdw_seg7_collision_arrow_lift;
+extern u32 so_wdw_seg7_collision_070184C8;
+extern u32 so_wdw_seg7_collision_07018528;
+extern u32 so_wdw_seg7_collision_express_elevator_platform;
+extern u32 so_wdw_seg7_collision_rect_floating_platform;
+extern u32 so_wdw_seg7_collision_070186B4;
+
 #endif

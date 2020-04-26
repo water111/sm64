@@ -29,7 +29,7 @@ static u16 sCurrentMusic = MUSIC_NONE;
 static u16 sCurrentShellMusic = MUSIC_NONE;
 static u16 sCurrentCapMusic = MUSIC_NONE;
 static u8 sPlayingInfiniteStairs = FALSE;
-static u8 unused8032C6D8[16] = { 0 };
+UNUSED static u8 unused8032C6D8[16] = { 0 };
 static s16 sSoundMenuModeToSoundMode[] = { SOUND_MODE_STEREO, SOUND_MODE_MONO, SOUND_MODE_HEADSET };
 // Only the 20th array element is used.
 static u32 menuSoundsExtra[] = {
@@ -199,6 +199,9 @@ void play_infinite_stairs_music(void) {
 }
 
 void set_background_music(u16 a, u16 seqArgs, s16 fadeTimer) {
+#ifdef DISABLE_SOUND
+    return;
+#endif
     if (gResetTimer == 0 && seqArgs != sCurrentMusic) {
         if (gCurrCreditsEntry != 0) {
             sound_reset(7);
@@ -214,6 +217,9 @@ void set_background_music(u16 a, u16 seqArgs, s16 fadeTimer) {
 }
 
 void fadeout_music(s16 fadeOutTime) {
+#ifdef DISABLE_SOUND
+    return;
+#endif
     func_803210D4(fadeOutTime);
     sCurrentMusic = MUSIC_NONE;
     sCurrentShellMusic = MUSIC_NONE;

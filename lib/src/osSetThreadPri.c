@@ -1,6 +1,10 @@
 #include "libultra_internal.h"
 
 void osSetThreadPri(OSThread *thread, OSPri pri) {
+#ifdef PC_PORT
+    (void)thread;
+    (void)pri;
+#else
     register u32 int_disabled = __osDisableInt();
     if (thread == NULL) {
         thread = D_803348A0;
@@ -21,4 +25,5 @@ void osSetThreadPri(OSThread *thread, OSPri pri) {
     }
 
     __osRestoreInt(int_disabled);
+#endif
 }

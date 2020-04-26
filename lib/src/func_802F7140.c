@@ -1,10 +1,14 @@
 #include "libultra_internal.h"
 extern u32 D_8030208C;
 void func_802F7140(u32 a0) {
+#ifndef PC_PORT
     register u32 s0;
     s0 = __osDisableInt();
     D_8030208C &= ~(-0x402 & a0);
     __osRestoreInt(s0);
+#else
+    (void)a0;
+#endif
 }
 /*
 / 0B6940 802F7140 27BDFFD8 /  addiu $sp, $sp, -0x28

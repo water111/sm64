@@ -21,6 +21,1431 @@
 #define _GBI_H_
 
 #include <PR/ultratypes.h>
+#include "macros.h"
+
+#ifdef PC_PORT_GFX
+
+
+
+/*
+ * Coordinate shift values, number of bits of fraction
+ */
+#define	G_TEXTURE_IMAGE_FRAC	2
+#define	G_TEXTURE_SCALE_FRAC	16
+#define	G_SCALE_FRAC		8
+#define	G_ROTATE_FRAC		16
+
+
+/*
+ * Maximum z-buffer value, used to initialize the z-buffer.
+ * Note : this number is NOT the viewport z-scale constant.
+ * See the comment next to G_MAXZ for more info.
+ */
+#define	G_MAXFBZ		0x3fff	/* 3b exp, 11b mantissa */
+
+#define	GPACK_RGBA5551(r, g, b, a)	((((r)<<8) & 0xf800) | 		\
+					 (((g)<<3) & 0x7c0) |		\
+					 (((b)>>2) & 0x3e) | ((a) & 0x1))
+#define	GPACK_ZDZ(z, dz)		((z) << 2 | (dz))
+
+/*
+ * G_MTX: parameter flags
+ */
+#ifdef	F3DEX_GBI_2
+# define G_MTX_MODELVIEW    0x00	/* matrix types */
+# define G_MTX_PROJECTION   0x04
+# define G_MTX_MUL          0x00	/* concat or load */
+# define G_MTX_LOAD         0x02
+# define G_MTX_NOPUSH       0x00	/* push or not */
+# define G_MTX_PUSH         0x01
+#else	/* F3DEX_GBI_2 */
+# define G_MTX_MODELVIEW    0x00	/* matrix types */
+# define G_MTX_PROJECTION   0x01
+# define G_MTX_MUL          0x00	/* concat or load */
+# define G_MTX_LOAD         0x02
+# define G_MTX_NOPUSH       0x00	/* push or not */
+# define G_MTX_PUSH         0x04
+#endif	/* F3DEX_GBI_2 */
+
+
+
+
+#define G_ZBUFFER		0x00000001
+#define G_SHADE			0x00000004	/* enable Gouraud interp */
+/* rest of low byte reserved for setup ucode */
+#ifdef	F3DEX_GBI_2
+# define G_TEXTURE_ENABLE	0x00000000	/* Ignored               */
+# define G_SHADING_SMOOTH	0x00200000	/* flat or smooth shaded */
+# define G_CULL_FRONT		0x00000200
+# define G_CULL_BACK		0x00000400
+# define G_CULL_BOTH		0x00000600	/* To make code cleaner */
+#else
+# define G_TEXTURE_ENABLE	0x00000002	/* Microcode use only */
+# define G_SHADING_SMOOTH	0x00000200	/* flat or smooth shaded */
+# define G_CULL_FRONT		0x00001000
+# define G_CULL_BACK		0x00002000
+# define G_CULL_BOTH		0x00003000	/* To make code cleaner */
+#endif
+#define G_FOG			0x00010000
+#define G_LIGHTING		0x00020000
+#define G_TEXTURE_GEN		0x00040000
+#define G_TEXTURE_GEN_LINEAR	0x00080000
+#define G_LOD			0x00100000	/* NOT IMPLEMENTED */
+#if	(defined(F3DEX_GBI)||defined(F3DLP_GBI))
+# define G_CLIPPING		0x00800000
+#else
+# define G_CLIPPING		0x00000000
+#endif
+
+
+/*
+ * G_SETIMG fmt: set image formats
+ */
+#define G_IM_FMT_RGBA	0
+#define G_IM_FMT_YUV	1
+#define G_IM_FMT_CI	2
+#define G_IM_FMT_IA	3
+#define G_IM_FMT_I	4
+
+/*
+ * G_SETIMG siz: set image pixel size
+ */
+#define G_IM_SIZ_4b	0
+#define G_IM_SIZ_8b	1
+#define G_IM_SIZ_16b	2
+#define G_IM_SIZ_32b	3
+#define G_IM_SIZ_DD	5
+
+#define G_IM_SIZ_4b_BYTES		0
+#define G_IM_SIZ_4b_TILE_BYTES	G_IM_SIZ_4b_BYTES
+#define G_IM_SIZ_4b_LINE_BYTES	G_IM_SIZ_4b_BYTES
+
+#define G_IM_SIZ_8b_BYTES		1
+#define G_IM_SIZ_8b_TILE_BYTES	G_IM_SIZ_8b_BYTES
+#define G_IM_SIZ_8b_LINE_BYTES	G_IM_SIZ_8b_BYTES
+
+#define G_IM_SIZ_16b_BYTES		2
+#define G_IM_SIZ_16b_TILE_BYTES	G_IM_SIZ_16b_BYTES
+#define G_IM_SIZ_16b_LINE_BYTES	G_IM_SIZ_16b_BYTES
+
+#define G_IM_SIZ_32b_BYTES		4
+#define G_IM_SIZ_32b_TILE_BYTES	2
+#define G_IM_SIZ_32b_LINE_BYTES	2
+
+#define G_IM_SIZ_4b_LOAD_BLOCK	G_IM_SIZ_16b
+#define G_IM_SIZ_8b_LOAD_BLOCK	G_IM_SIZ_16b
+#define G_IM_SIZ_16b_LOAD_BLOCK	G_IM_SIZ_16b
+#define G_IM_SIZ_32b_LOAD_BLOCK	G_IM_SIZ_32b
+
+#define G_IM_SIZ_4b_SHIFT  2
+#define G_IM_SIZ_8b_SHIFT  1
+#define G_IM_SIZ_16b_SHIFT 0
+#define G_IM_SIZ_32b_SHIFT 0
+
+#define G_IM_SIZ_4b_INCR  3
+#define G_IM_SIZ_8b_INCR  1
+#define G_IM_SIZ_16b_INCR 0
+#define G_IM_SIZ_32b_INCR 0
+
+
+
+/*
+ * G_SETCOMBINE: color combine modes
+ */
+/* Color combiner constants: */
+#define G_CCMUX_COMBINED        0
+#define G_CCMUX_TEXEL0          1
+#define G_CCMUX_TEXEL1          2
+#define G_CCMUX_PRIMITIVE       3
+#define G_CCMUX_SHADE           4
+#define G_CCMUX_ENVIRONMENT     5
+#define G_CCMUX_CENTER          6
+#define G_CCMUX_SCALE           6
+#define G_CCMUX_COMBINED_ALPHA  7
+#define G_CCMUX_TEXEL0_ALPHA    8
+#define G_CCMUX_TEXEL1_ALPHA    9
+#define G_CCMUX_PRIMITIVE_ALPHA 10
+#define G_CCMUX_SHADE_ALPHA     11
+#define G_CCMUX_ENV_ALPHA       12
+#define G_CCMUX_LOD_FRACTION    13
+#define G_CCMUX_PRIM_LOD_FRAC   14
+#define G_CCMUX_NOISE           7
+#define G_CCMUX_K4              7
+#define G_CCMUX_K5              15
+#define G_CCMUX_1               6
+#define G_CCMUX_0               31
+
+/* Alpha combiner constants: */
+#define G_ACMUX_COMBINED	    0
+#define G_ACMUX_TEXEL0		    1
+#define G_ACMUX_TEXEL1		    2
+#define G_ACMUX_PRIMITIVE	    3
+#define G_ACMUX_SHADE		    4
+#define G_ACMUX_ENVIRONMENT	    5
+#define G_ACMUX_LOD_FRACTION	0
+#define G_ACMUX_PRIM_LOD_FRAC	6
+#define G_ACMUX_1		        6
+#define G_ACMUX_0		        7
+
+
+#define	G_CC_SHADE 1
+#define G_CC_MODULATEIDECALA 2
+#define	G_CC_MODULATERGB 3
+#define G_CC_DECALRGBA 4
+#define G_CC_MODULATERGBA 5
+#define G_CC_MODULATEIA 6
+#define G_CC_SHADEFADEA 7
+#define G_CC_MODULATEIFADEA 8
+#define G_CC_DECALFADEA 9
+#define G_CC_FADEA 10
+#define G_CC_BLENDRGBFADEA 11
+#define G_CC_MODULATERGBFADE 12
+#define G_CC_DECALFADE 13
+#define G_CC_MODULATERGBFADEA 14
+#define G_CC_BLENDRGBA 15
+#define G_CC_MODULATEFADE 16
+#define G_CC_DECALRGB 17
+#define G_CC_PASS2 18
+#define G_CC_FADE 19
+#define G_CC_TRILERP 20
+#define G_CC_DECALRGB2 21
+#define G_CC_MODULATERGBA_PRIM 22
+
+
+#define G_RM_OPA_SURF 1
+#define G_RM_OPA_SURF2 2
+#define G_RM_TEX_EDGE 3
+#define G_RM_TEX_EDGE2 4
+#define G_RM_AA_ZB_OPA_SURF 5
+#define G_RM_AA_ZB_OPA_SURF2 6
+#define G_RM_AA_OPA_SURF 7
+#define G_RM_AA_TEX_EDGE 8
+#define G_RM_AA_XLU_SURF 9
+#define G_RM_AA_XLU_SURF2 19
+#define G_RM_ZB_OPA_SURF 10
+#define G_RM_AA_ZB_OPA_DECAL 11
+#define G_RM_AA_ZB_OPA_INTER 12
+#define G_RM_AA_ZB_TEX_EDGE 13
+#define G_RM_AA_ZB_XLU_SURF 14
+#define G_RM_AA_ZB_XLU_DECAL 15
+#define G_RM_AA_ZB_XLU_INTER 16
+#define G_RM_AA_OPA_SURF2 17
+#define G_RM_AA_TEX_EDGE2 18
+#define G_RM_ZB_OPA_SURF2 20
+#define G_RM_AA_ZB_OPA_DECAL2 21
+#define G_RM_AA_ZB_OPA_INTER2 22
+#define G_RM_AA_ZB_TEX_EDGE2 23
+#define G_RM_AA_ZB_XLU_SURF2 24
+#define G_RM_AA_ZB_XLU_DECAL2 25
+#define G_RM_AA_ZB_XLU_INTER2 26
+#define G_RM_CUSTOM_AA_ZB_XLU_SURF 27
+#define G_RM_NOOP2 28
+#define G_RM_FOG_SHADE_A 29
+#define G_RM_XLU_SURF 30
+#define G_RM_XLU_SURF2 31
+#define G_RM_PASS 32
+
+
+#define NUMLIGHTS_1	1
+#define NUMLIGHTS_2	2
+
+/*
+ * G_SETOTHERMODE_L sft: shift count
+ */
+#define	G_MDSFT_ALPHACOMPARE		0
+#define	G_MDSFT_ZSRCSEL			2
+#define	G_MDSFT_RENDERMODE		3
+#define	G_MDSFT_BLENDER			16
+
+/*
+ * G_SETOTHERMODE_H sft: shift count
+ */
+#define	G_MDSFT_BLENDMASK		0	/* unsupported */
+#define	G_MDSFT_ALPHADITHER		4
+#define	G_MDSFT_RGBDITHER		6
+
+#define	G_MDSFT_COMBKEY			8
+#define	G_MDSFT_TEXTCONV		9
+#define	G_MDSFT_TEXTFILT		12
+#define	G_MDSFT_TEXTLUT			14
+#define	G_MDSFT_TEXTLOD			16
+#define	G_MDSFT_TEXTDETAIL		17
+#define	G_MDSFT_TEXTPERSP		19
+#define	G_MDSFT_CYCLETYPE		20
+#define	G_MDSFT_COLORDITHER		22	/* unsupported in HW 2.0 */
+#define	G_MDSFT_PIPELINE		23
+
+/* G_SETOTHERMODE_H gPipelineMode */
+#define	G_PM_1PRIMITIVE		(1 << G_MDSFT_PIPELINE)
+#define	G_PM_NPRIMITIVE		(0 << G_MDSFT_PIPELINE)
+
+/* G_SETOTHERMODE_H gSetCycleType */
+#define	G_CYC_1CYCLE		(0 << G_MDSFT_CYCLETYPE)
+#define	G_CYC_2CYCLE		(1 << G_MDSFT_CYCLETYPE)
+#define	G_CYC_COPY		(2 << G_MDSFT_CYCLETYPE)
+#define	G_CYC_FILL		(3 << G_MDSFT_CYCLETYPE)
+
+/* G_SETOTHERMODE_H gSetTexturePersp */
+#define G_TP_NONE	(0 << G_MDSFT_TEXTPERSP)
+#define G_TP_PERSP	(1 << G_MDSFT_TEXTPERSP)
+
+/* G_SETOTHERMODE_H gSetTextureDetail */
+#define G_TD_CLAMP	(0 << G_MDSFT_TEXTDETAIL)
+#define G_TD_SHARPEN	(1 << G_MDSFT_TEXTDETAIL)
+#define G_TD_DETAIL	(2 << G_MDSFT_TEXTDETAIL)
+
+/* G_SETOTHERMODE_H gSetTextureLOD */
+#define G_TL_TILE	(0 << G_MDSFT_TEXTLOD)
+#define G_TL_LOD	(1 << G_MDSFT_TEXTLOD)
+
+/* G_SETOTHERMODE_H gSetTextureLUT */
+#define G_TT_NONE	(0 << G_MDSFT_TEXTLUT)
+#define G_TT_RGBA16	(2 << G_MDSFT_TEXTLUT)
+#define G_TT_IA16	(3 << G_MDSFT_TEXTLUT)
+
+/* G_SETOTHERMODE_H gSetTextureFilter */
+#define G_TF_POINT	(0 << G_MDSFT_TEXTFILT)
+#define G_TF_AVERAGE	(3 << G_MDSFT_TEXTFILT)
+#define G_TF_BILERP	(2 << G_MDSFT_TEXTFILT)
+
+/* G_SETOTHERMODE_H gSetTextureConvert */
+#define G_TC_CONV	(0 << G_MDSFT_TEXTCONV)
+#define G_TC_FILTCONV	(5 << G_MDSFT_TEXTCONV)
+#define G_TC_FILT	(6 << G_MDSFT_TEXTCONV)
+
+/* G_SETOTHERMODE_H gSetCombineKey */
+#define G_CK_NONE	(0 << G_MDSFT_COMBKEY)
+#define G_CK_KEY	(1 << G_MDSFT_COMBKEY)
+
+/* G_SETOTHERMODE_H gSetColorDither */
+#define	G_CD_MAGICSQ		(0 << G_MDSFT_RGBDITHER)
+#define	G_CD_BAYER		(1 << G_MDSFT_RGBDITHER)
+#define	G_CD_NOISE		(2 << G_MDSFT_RGBDITHER)
+
+#ifndef _HW_VERSION_1
+#define	G_CD_DISABLE		(3 << G_MDSFT_RGBDITHER)
+#define	G_CD_ENABLE		G_CD_NOISE	/* HW 1.0 compatibility mode */
+#else
+#define G_CD_ENABLE		(1 << G_MDSFT_COLORDITHER)
+#define G_CD_DISABLE		(0 << G_MDSFT_COLORDITHER)
+#endif
+
+/* G_SETOTHERMODE_H gSetAlphaDither */
+#define	G_AD_PATTERN		(0 << G_MDSFT_ALPHADITHER)
+#define	G_AD_NOTPATTERN		(1 << G_MDSFT_ALPHADITHER)
+#define	G_AD_NOISE		(2 << G_MDSFT_ALPHADITHER)
+#define	G_AD_DISABLE		(3 << G_MDSFT_ALPHADITHER)
+
+/* G_SETOTHERMODE_L gSetAlphaCompare */
+#define	G_AC_NONE		(0 << G_MDSFT_ALPHACOMPARE)
+#define	G_AC_THRESHOLD		(1 << G_MDSFT_ALPHACOMPARE)
+#define	G_AC_DITHER		(3 << G_MDSFT_ALPHACOMPARE)
+
+/* G_SETOTHERMODE_L gSetDepthSource */
+#define	G_ZS_PIXEL		(0 << G_MDSFT_ZSRCSEL)
+#define	G_ZS_PRIM		(1 << G_MDSFT_ZSRCSEL)
+
+/* G_SETOTHERMODE_L gSetRenderMode */
+#define	AA_EN		0x8
+#define	Z_CMP		0x10
+#define	Z_UPD		0x20
+#define	IM_RD		0x40
+#define	CLR_ON_CVG	0x80
+#define	CVG_DST_CLAMP	0
+#define	CVG_DST_WRAP	0x100
+#define	CVG_DST_FULL	0x200
+#define	CVG_DST_SAVE	0x300
+#define	ZMODE_OPA	0
+#define	ZMODE_INTER	0x400
+#define	ZMODE_XLU	0x800
+#define	ZMODE_DEC	0xc00
+#define	CVG_X_ALPHA	0x1000
+#define	ALPHA_CVG_SEL	0x2000
+#define	FORCE_BL	0x4000
+#define	TEX_EDGE	0x0000 /* used to be 0x8000 */
+
+#define	G_BL_CLR_IN	0
+#define	G_BL_CLR_MEM	1
+#define	G_BL_CLR_BL	2
+#define	G_BL_CLR_FOG	3
+#define	G_BL_1MA	0
+#define	G_BL_A_MEM	1
+#define	G_BL_A_IN	0
+#define	G_BL_A_FOG	1
+#define	G_BL_A_SHADE	2
+#define	G_BL_1		2
+#define	G_BL_0		3
+
+
+/*
+ * G_SETSCISSOR: interlace mode
+ */
+#define	G_SC_NON_INTERLACE	0
+#define	G_SC_ODD_INTERLACE	3
+#define	G_SC_EVEN_INTERLACE	2
+
+/* flags to inhibit pushing of the display list (on branch) */
+#define G_DL_PUSH		0x00
+#define G_DL_NOPUSH		0x01
+
+
+
+
+/*
+ * Vertex (set up for use with colors)
+ */
+typedef struct {
+  short		ob[3];	/* x, y, z */
+  unsigned short	flag;
+  short		tc[2];	/* texture coord */
+  unsigned char	cn[4];	/* color & alpha */
+} Vtx_t;
+
+/*
+ * Vertex (set up for use with normals)
+ */
+typedef struct {
+  short		ob[3];	/* x, y, z */
+  unsigned short	flag;
+  short		tc[2];	/* texture coord */
+  signed char	n[3];	/* normal */
+  unsigned char   a;      /* alpha  */
+} Vtx_tn;
+
+typedef union {
+  Vtx_t		v;  /* Use this one for colors  */
+  Vtx_tn              n;  /* Use this one for normals */
+  long long int	force_structure_alignment;
+} Vtx;
+
+/*
+ * Sprite structure
+ */
+
+typedef struct {
+  void *SourceImagePointer;
+  void *TlutPointer;
+  short Stride;
+  short SubImageWidth;
+  short SubImageHeight;
+  char  SourceImageType;
+  char  SourceImageBitSize;
+  short SourceImageOffsetS;
+  short SourceImageOffsetT;
+  /* 20 bytes for above */
+
+  /* padding to bring structure size to 64 bit allignment */
+  char dummy[4];
+
+} uSprite_t;
+
+typedef union {
+  uSprite_t  s;
+
+  /* Need to make sure this is 64 bit aligned */
+  long long int         force_structure_allignment[3];
+} uSprite;
+
+/*
+ * Triangle face
+ */
+typedef struct {
+  unsigned char	flag;
+  unsigned char	v[3];
+} Tri;
+
+/*
+ * 4x4 matrix, fixed point s15.16 format.
+ * First 8 words are integer portion of the 4x4 matrix
+ * Last 8 words are the fraction portion of the 4x4 matrix
+ */
+typedef s32	Mtx_t[4][4];
+
+typedef union {
+  Mtx_t		m;
+  long long int	force_structure_alignment;
+} Mtx;
+
+/*
+ * Viewport
+ */
+
+
+#define G_MAXZ		0x03ff	/* 10 bits of integer screen-Z precision */
+
+/*
+ * The viewport structure elements have 2 bits of fraction, necessary
+ * to accomodate the sub-pixel positioning scaling for the hardware.
+ * This can also be exploited to handle odd-sized viewports.
+ *
+ * Accounting for these fractional bits, using the default projection
+ * and viewing matrices, the viewport structure is initialized thusly:
+ *
+ *		(SCREEN_WD/2)*4, (SCREEN_HT/2)*4, G_MAXZ, 0,
+ *		(SCREEN_WD/2)*4, (SCREEN_HT/2)*4, 0, 0,
+ */
+typedef struct {
+  short	vscale[4];  /* scale, 2 bits fraction */
+  short	vtrans[4];  /* translate, 2 bits fraction */
+  /* both the above arrays are padded to 64-bit boundary */
+} Vp_t;
+
+typedef union {
+  Vp_t		vp;
+  long long int	force_structure_alignment;
+} Vp;
+
+
+/*
+ * Light structure.
+ *
+ * Note: only directional (infinite) lights are currently supported.
+ *
+ * Note: the weird order is for the DMEM alignment benefit of
+ * the microcode.
+ *
+ */
+
+typedef struct {
+  unsigned char	col[3];		/* diffuse light value (rgba) */
+  char 		pad1;
+  unsigned char	colc[3];	/* copy of diffuse light value (rgba) */
+  char 		pad2;
+  signed char	dir[3];		/* direction of light (normalized) */
+  char 		pad3;
+} Light_t;
+
+typedef struct {
+  unsigned char	col[3];		/* ambient light value (rgba) */
+  char 		pad1;
+  unsigned char	colc[3];	/* copy of ambient light value (rgba) */
+  char 		pad2;
+} Ambient_t;
+
+typedef struct {
+  int		x1,y1,x2,y2;	/* texture offsets for highlight 1/2 */
+} Hilite_t;
+
+typedef union {
+  Light_t	l;
+  long long int	force_structure_alignment[2];
+} Light;
+
+typedef union {
+  Ambient_t	l;
+  long long int	force_structure_alignment[1];
+} Ambient;
+
+typedef struct {
+  Ambient	a;
+  Light	l[7];
+} Lightsn;
+
+typedef struct {
+  Ambient	a;
+  Light	l[1];
+} Lights0;
+
+typedef struct {
+  Ambient	a;
+  Light	l[1];
+} Lights1;
+
+typedef struct {
+  Ambient	a;
+  Light	l[2];
+} Lights2;
+
+typedef struct {
+  Ambient	a;
+  Light	l[3];
+} Lights3;
+
+typedef struct {
+  Ambient	a;
+  Light	l[4];
+} Lights4;
+
+typedef struct {
+  Ambient	a;
+  Light	l[5];
+} Lights5;
+
+typedef struct {
+  Ambient	a;
+  Light	l[6];
+} Lights6;
+
+typedef struct {
+  Ambient	a;
+  Light	l[7];
+} Lights7;
+
+typedef struct {
+  Light	l[2];
+} LookAt;
+
+typedef union {
+  Hilite_t	h;
+  long int	force_structure_alignment[4];
+} Hilite;
+
+
+
+#define gdSPDefLights0(ar,ag,ab)					\
+		{ 	{{ {ar,ag,ab},0,{ar,ag,ab},0}},			\
+		       {{{ { 0, 0, 0},0,{ 0, 0, 0},0,{ 0, 0, 0},0}}} }
+#define gdSPDefLights1(ar,ag,ab,r1,g1,b1,x1,y1,z1)			\
+		{ 	{{ {ar,ag,ab},0,{ar,ag,ab},0}},			\
+		       {{{ {r1,g1,b1},0,{r1,g1,b1},0,{x1,y1,z1},0}}} }
+#define gdSPDefLights2(ar,ag,ab,r1,g1,b1,x1,y1,z1,r2,g2,b2,x2,y2,z2)	\
+		{ 	{{ {ar,ag,ab},0,{ar,ag,ab},0}},			\
+		       {{{ {r1,g1,b1},0,{r1,g1,b1},0,{x1,y1,z1},0}},	\
+			{{ {r2,g2,b2},0,{r2,g2,b2},0,{x2,y2,z2},0}}} }
+#define gdSPDefLights3(ar,ag,ab,r1,g1,b1,x1,y1,z1,r2,g2,b2,x2,y2,z2,r3,g3,b3,x3,y3,z3)									\
+		{ 	{{ {ar,ag,ab},0,{ar,ag,ab},0}},			\
+		       {{{ {r1,g1,b1},0,{r1,g1,b1},0,{x1,y1,z1},0}},	\
+			{{ {r2,g2,b2},0,{r2,g2,b2},0,{x2,y2,z2},0}},	\
+			{{ {r3,g3,b3},0,{r3,g3,b3},0,{x3,y3,z3},0}}} }
+#define gdSPDefLights4(ar,ag,ab,r1,g1,b1,x1,y1,z1,r2,g2,b2,x2,y2,z2,r3,g3,b3,x3,y3,z3,r4,g4,b4,x4,y4,z4)						\
+		{ 	{{ {ar,ag,ab},0,{ar,ag,ab},0}},			\
+		       {{{ {r1,g1,b1},0,{r1,g1,b1},0,{x1,y1,z1},0}},	\
+			{{ {r2,g2,b2},0,{r2,g2,b2},0,{x2,y2,z2},0}},	\
+			{{ {r3,g3,b3},0,{r3,g3,b3},0,{x3,y3,z3},0}},	\
+			{{ {r4,g4,b4},0,{r4,g4,b4},0,{x4,y4,z4},0}}} }
+#define gdSPDefLights5(ar,ag,ab,r1,g1,b1,x1,y1,z1,r2,g2,b2,x2,y2,z2,r3,g3,b3,x3,y3,z3,r4,g4,b4,x4,y4,z4,r5,g5,b5,x5,y5,z5)				\
+		{ 	{{ {ar,ag,ab},0,{ar,ag,ab},0}},			\
+		       {{{ {r1,g1,b1},0,{r1,g1,b1},0,{x1,y1,z1},0}},	\
+			{{ {r2,g2,b2},0,{r2,g2,b2},0,{x2,y2,z2},0}},	\
+			{{ {r3,g3,b3},0,{r3,g3,b3},0,{x3,y3,z3},0}},	\
+			{{ {r4,g4,b4},0,{r4,g4,b4},0,{x4,y4,z4},0}},	\
+			{{ {r5,g5,b5},0,{r5,g5,b5},0,{x5,y5,z5},0}}} }
+
+/*
+ * Texturing macros
+ */
+
+/* These are also defined defined above for Sprite Microcode */
+
+#define	G_TX_LOADTILE	7
+#define	G_TX_RENDERTILE	0
+
+#define	G_TX_NOMIRROR	0
+#define	G_TX_WRAP	0
+#define	G_TX_MIRROR	0x1
+#define	G_TX_CLAMP	0x2
+#define	G_TX_NOMASK	0
+#define	G_TX_NOLOD	0
+
+
+#ifndef MAX
+#define MAX(a, b)				((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef MIN
+#define MIN(a, b)				((a) < (b) ? (a) : (b))
+#endif
+
+
+/*
+ *  Dxt is the inverse of the number of 64-bit words in a line of
+ *  the texture being loaded using the load_block command.  If
+ *  there are any 1's to the right of the 11th fractional bit,
+ *  dxt should be rounded up.  The following macros accomplish
+ *  this.  The 4b macros are a special case since 4-bit textures
+ *  are loaded as 8-bit textures.  Dxt is fixed point 1.11. RJM
+ */
+#define	G_TX_DXT_FRAC	11
+
+/*
+ *  For RCP 2.0, the maximum number of texels that can be loaded
+ *  using a load_block command is 2048.  In order to load the total
+ *  4kB of Tmem, change the texel size when loading to be G_IM_SIZ_16b,
+ *  then change the tile to the proper texel size after the load.
+ *  The g*DPLoadTextureBlock macros already do this, so this change
+ *  will be transparent if you use these macros.  If you use
+ *  the g*DPLoadBlock macros directly, you will need to handle this
+ *  tile manipulation yourself.  RJM.
+ */
+#ifdef _HW_VERSION_1
+#define G_TX_LDBLK_MAX_TXL	4095
+#else
+#define G_TX_LDBLK_MAX_TXL	2047
+#endif /* _HW_VERSION_1 */
+
+#define TXL2WORDS(txls, b_txl)	MAX(1, ((txls)*(b_txl)/8))
+#define CALC_DXT(width, b_txl)	\
+		(((1 << G_TX_DXT_FRAC) + TXL2WORDS(width, b_txl) - 1) / \
+					TXL2WORDS(width, b_txl))
+
+
+
+typedef enum {
+  PCG_VIEWPORT,
+  PCG_SCISSOR,
+  PCG_CLEAR_GEOM_MODE,
+  PCG_END_DISPLAY_LIST,
+  PCG_VERTEX,
+  PCG_SET_TEX_IM,
+  PCG_DISPLAY_LIST,
+  PCG_NO_OP,
+  PCG_ONE_TRIANGLE,
+  PCG_SET_COMBINE_MODE,
+  PCG_SET_TEX_LOD,
+  PCG_SET_TEX_LUT,
+  PCG_SET_TEX_DETAIL,
+  PCG_SET_TEX_PERSP,
+  PCG_SET_TEX_FILT,
+  PCG_SET_TEX_CONV,
+  PCG_SET_COMB_KEY,
+  PCG_SET_ALPHA_COMPARE,
+  PCG_SET_RENDER_MODE,
+  PCG_SET_COLOR_DITHER,
+  PCG_SET_CYCLE_TYPE,
+  PCG_SET_GEOM_MODE,
+  PCG_NUM_LIGHTS,
+  PCG_TEXTURE,
+  PCG_SET_DEPTH_SOURCE,
+  PCG_SET_DEPTH_IMAGE,
+  PCG_SET_COLOR_IMAGE,
+  PCG_SET_FILL_COLOR,
+  PCG_DP_FILL_RECTANGLE,
+  PCG_FULL_SYNC,
+  PCG_TEXTURE_RECTANGLE,
+  PCG_SET_TILE,
+  PCG_SET_TILE_SIZE,
+  PCG_LOAD_BLOCK,
+  PCG_MATRIX,
+  PCG_POP_MATRIX,
+  PCG_PERSP_NORMALIZE,
+  PCG_SET_ENV_COLOR,
+  PCG_BRANCH_LIST,
+  PCG_LOAD_TEX_BLOCK,
+  PCG_LIGHT,
+  PCG_TWO_TRIANGLES,
+  PCG_GEOM_MODE,
+  PCG_SET_FOG_COLOR,
+  PCG_SET_FOG_POS,
+  PCG_SET_BLEND_COLOR,
+  PCG_NYI,
+} PCG_TYPE;
+
+typedef struct {
+  Vp* ptr;
+} PCG_Viewport;
+
+typedef struct {
+  u32 mode;
+  f32 ulx;
+  f32 uly;
+  f32 lrx;
+  f32 lry;
+} PCG_Scissor;
+
+typedef struct {
+  Vtx* ptr;
+  u32 n, v0;
+} PCG_Vertex;
+
+typedef struct {
+  s32 fmt;
+  s32 siz;
+  s32 width;
+  void* ptr;
+} PCG_TexImage;
+
+typedef struct {
+  s32 sc;
+  s32 tc;
+  s32 level;
+  s32 tile;
+  s32 on;
+} PCG_Texture;
+
+typedef struct {
+  s32 v0, v1, v2, flag;
+} PCG_OneTriangle;
+
+typedef struct {
+  s32 mode1, mode2;
+} PCG_CombineMode;
+
+typedef struct {
+  u32 mode1, mode2;
+} PCG_RenderMode;
+
+typedef struct {
+  s32 fmt, siz, width;
+  void* ptr;
+} PCG_ColorImage;
+
+typedef struct {
+  s32 ulx, uly, lrx, lry;
+} PCG_FillRectangle;
+
+typedef struct {
+  u32 ulx, uly, lrx, lry, tile;
+  s32 s, t, dsdx, dtdy;
+} PCG_TextureRectangle;
+
+typedef struct {
+  u32 fmt, siz, line, tmem, tile, palette, cmt, maskt, shiftt, cms, masks, shifts;
+} PCG_SetTile;
+
+typedef struct {
+  u32 tile, uls, ult, lrs, lrt;
+} PCG_SetTileSize;
+
+typedef struct {
+  u32 tile, uls, ult, lrs, dxt;
+} PCG_LoadBlock;
+
+typedef struct {
+  void* ptr;
+  u8 param;
+} PCG_Matrix;
+
+typedef struct {
+  u8 r, g, b, a;
+} PCG_RGBA8;
+
+typedef struct {
+  void* timg;
+  u32 fmt, siz, width, height, pal, cms, cmt, masks, maskt, shifts, shiftt;
+} PCG_LoadTexBlock;
+
+typedef struct {
+  Light* l;
+  s32 n;
+} PCG_Light;
+
+typedef struct {
+  s32 v00, v01, v02, flag0, v10, v11, v12, flag1;
+} PCG_TwoTriangles;
+
+typedef struct {
+  s32 s, c;
+} PCG_GeomMode;
+
+typedef struct {
+  s32 minimum, maximum;
+} PCG_SetFogPos;
+
+typedef union {
+  PCG_Viewport viewport;
+  PCG_Scissor scissor;
+  u32 geom_mode;
+  PCG_Vertex vertex;
+  PCG_TexImage tex_image;
+  void* display_list;
+  void* data_ptr;
+  PCG_OneTriangle one_triangle;
+  PCG_CombineMode combine_mode;
+  PCG_RenderMode render_mode;
+  u32 data_32;
+  s32 data_s32;
+  PCG_Texture texture;
+  PCG_ColorImage color_image;
+  PCG_FillRectangle fill_rectangle;
+  PCG_TextureRectangle texture_rectangle;
+  PCG_SetTile set_tile;
+  PCG_SetTileSize set_tile_size;
+  PCG_LoadBlock load_block;
+  PCG_Matrix matrix;
+  PCG_RGBA8 rgba8;
+  PCG_LoadTexBlock load_tex_block;
+  PCG_Light light;
+  PCG_TwoTriangles two_triangles;
+  PCG_GeomMode geom_mode_sc;
+  PCG_SetFogPos set_fog_pos;
+} Gfx_data;
+
+typedef struct {
+  PCG_TYPE type;
+  Gfx_data data;
+} Gfx;
+
+UNUSED static void gSPViewport(Gfx* gfx, uintptr_t ptr) {
+  gfx->type = PCG_VIEWPORT;
+  gfx->data.viewport.ptr = (Vp*)ptr;
+}
+
+UNUSED static void gDPSetScissor(Gfx* gfx, u32 mode, f32 ulx, f32 uly, f32 lrx, f32 lry) {
+  gfx->type = PCG_SCISSOR;
+  gfx->data.scissor.mode = mode;
+  gfx->data.scissor.ulx = ulx;
+  gfx->data.scissor.uly = uly;
+  gfx->data.scissor.lrx = lrx;
+  gfx->data.scissor.lry = lry;
+}
+
+#define gsSPClearGeometryMode(a) \
+{ \
+  .type = PCG_CLEAR_GEOM_MODE, \
+  .data.geom_mode = a, \
+}
+
+UNUSED static void gSPClearGeometryMode(Gfx* gfx, u32 mode) {
+  gfx->type = PCG_CLEAR_GEOM_MODE;
+  gfx->data.geom_mode = mode;
+}
+
+#define gsSPEndDisplayList() \
+{ \
+  .type = PCG_END_DISPLAY_LIST, \
+}
+
+UNUSED static void gSPEndDisplayList(Gfx* gfx) {
+  gfx->type = PCG_END_DISPLAY_LIST;
+}
+
+#define gsSPVertex(a,b,c) \
+{ \
+  .type = PCG_VERTEX, \
+  .data.vertex.ptr = (Vtx*)a, \
+  .data.vertex.n = b, \
+  .data.vertex.v0 = c, \
+}
+
+// awful hack
+#define gSPVertex(a,b,c,d) gSPVertex_(a,(uintptr_t)b,c,d)
+UNUSED static void gSPVertex_(Gfx* gfx, uintptr_t ptr, u32 n, u32 v0) {
+  gfx->type = PCG_VERTEX;
+  gfx->data.vertex.ptr = (Vtx*)ptr;
+  gfx->data.vertex.n = n;
+  gfx->data.vertex.v0 = v0;
+}
+
+#define gsDPSetTextureImage(a, b, c, d) \
+{ \
+  .type = PCG_SET_TEX_IM, \
+  .data.tex_image.fmt = a, \
+  .data.tex_image.siz = b, \
+  .data.tex_image.width = c, \
+  .data.tex_image.ptr = (void*)d, \
+}
+
+UNUSED static void gDPSetTextureImage(Gfx* gfx, s32 fmt, s32 siz, s32 width, const void* ptr) {
+  gfx->type = PCG_SET_TEX_IM;
+  gfx->data.tex_image.fmt = fmt;
+  gfx->data.tex_image.siz = siz;
+  gfx->data.tex_image.width = width;
+  gfx->data.tex_image.ptr = (void*)ptr;
+}
+
+#define gsSPDisplayList(a) \
+{ \
+  .type = PCG_DISPLAY_LIST, \
+  .data.display_list = (void*)a, \
+}
+
+#define gSPDisplayList(a,b) gSPDisplayList_(a,(void*)b)
+UNUSED static void gSPDisplayList_(Gfx* gfx, void* dl) {
+  gfx->type = PCG_DISPLAY_LIST;
+  gfx->data.display_list = (void*)dl;
+}
+
+#define gsSP1Triangle(a,b,c,d) \
+{ \
+  .type = PCG_ONE_TRIANGLE, \
+  .data.one_triangle.v0 = a, \
+  .data.one_triangle.v1 = b, \
+  .data.one_triangle.v2 = c, \
+  .data.one_triangle.flag = d, \
+}
+
+UNUSED static void gSP1Triangle(Gfx* gfx, s32 v0, s32 v1, s32 v2, s32 flag) {
+  gfx->type = PCG_ONE_TRIANGLE;
+  gfx->data.one_triangle.v0 = v0;
+  gfx->data.one_triangle.v1 = v1;
+  gfx->data.one_triangle.v2 = v2;
+  gfx->data.one_triangle.flag = flag;
+}
+
+#define gsDPSetCombineMode(a,b) \
+{ \
+  .type = PCG_SET_COMBINE_MODE, \
+  .data.combine_mode.mode1 = a, \
+  .data.combine_mode.mode2 = b, \
+}
+
+UNUSED static void gDPSetCombineMode(Gfx* gfx, s32 mode1, s32 mode2) {
+  gfx->type = PCG_SET_COMBINE_MODE;
+  gfx->data.combine_mode.mode1 = mode1;
+  gfx->data.combine_mode.mode2 = mode2;
+}
+
+#define gsDPSetTextureLOD(x) {.type = PCG_SET_TEX_LOD, .data.data_32 = x}
+UNUSED static void gDPSetTextureLOD(Gfx* gfx, u32 flag) {
+  gfx->type = PCG_SET_TEX_LOD;
+  gfx->data.data_32 = flag;
+}
+
+UNUSED static void gDPSetTextureLUT(Gfx* gfx, u32 flag) {
+  gfx->type = PCG_SET_TEX_LUT;
+  gfx->data.data_32 = flag;
+}
+
+UNUSED static void gDPSetTextureDetail(Gfx* gfx, u32 flag) {
+  gfx->type = PCG_SET_TEX_DETAIL;
+  gfx->data.data_32 = flag;
+}
+
+#define gsDPSetTexturePersp(x) {.type = PCG_SET_TEX_PERSP, .data.data_32 = x}
+UNUSED static void gDPSetTexturePersp(Gfx* gfx, u32 flag) {
+  gfx->type = PCG_SET_TEX_PERSP;
+  gfx->data.data_32 = flag;
+}
+
+#define gsDPSetTextureFilter(x) {.type = PCG_SET_TEX_FILT, .data.data_32 = x}
+UNUSED static void gDPSetTextureFilter(Gfx* gfx, u32 flag) {
+  gfx->type = PCG_SET_TEX_FILT;
+  gfx->data.data_32 = flag;
+}
+
+UNUSED static void gDPSetTextureConvert(Gfx* gfx, u32 flag) {
+  gfx->type = PCG_SET_TEX_CONV;
+  gfx->data.data_32 = flag;
+}
+
+UNUSED static void gDPSetCombineKey(Gfx* gfx, u32 flag) {
+  gfx->type = PCG_SET_COMB_KEY;
+  gfx->data.data_32 = flag;
+}
+
+#define gsDPSetAlphaCompare(x) {.type = PCG_SET_ALPHA_COMPARE, .data.data_32 = x}
+UNUSED static void gDPSetAlphaCompare(Gfx* gfx, u32 flag) {
+  gfx->type = PCG_SET_ALPHA_COMPARE;
+  gfx->data.data_32 = flag;
+}
+
+#define gsDPSetRenderMode(x,y) {.type = PCG_SET_RENDER_MODE, .data.combine_mode.mode1 = x, .data.combine_mode.mode2 = y}
+UNUSED static void gDPSetRenderMode(Gfx* gfx, u32 mode1, u32 mode2) {
+  gfx->type = PCG_SET_RENDER_MODE;
+  gfx->data.combine_mode.mode1 = mode1;
+  gfx->data.combine_mode.mode2 = mode2;
+}
+
+#define gsSPNumLights(a) {.type = PCG_NUM_LIGHTS, .data.data_s32 = a}
+UNUSED static void gSPNumLights(Gfx* gfx, u32 n) {
+  gfx->type = PCG_NUM_LIGHTS;
+  gfx->data.data_s32 = n;
+}
+
+#define gsSPTexture(a,b,c,d,e) \
+{ \
+  .type = PCG_TEXTURE, \
+  .data.texture.sc = a, \
+  .data.texture.tc = b, \
+  .data.texture.level = c, \
+  .data.texture.tile = d, \
+  .data.texture.on = e, \
+}
+
+UNUSED static void gSPTexture(Gfx* gfx, s32 sc, s32 tc, s32 level, s32 tile, s32 on) {
+  gfx->type = PCG_TEXTURE;
+
+  gfx->data.texture.sc = sc;
+  gfx->data.texture.tc = tc;
+  gfx->data.texture.level = level;
+  gfx->data.texture.tile = tile;
+  gfx->data.texture.on = on;
+}
+
+#define gsDPSetDepthSource(a) {.type = PCG_SET_DEPTH_SOURCE, .data.data_32 = a}
+UNUSED static void gDPSetDepthSource(Gfx* gfx, u32 src) {
+  gfx->type = PCG_SET_DEPTH_SOURCE;
+  gfx->data.data_32 = src;
+}
+
+UNUSED static void gDPSetDepthImage(Gfx* gfx, uintptr_t data) {
+  gfx->type = PCG_SET_DEPTH_IMAGE;
+  gfx->data.data_ptr = (void*)data;
+}
+
+UNUSED static void gDPSetColorImage(Gfx *gfx, s32 fmt, s32 siz, s32 width, uintptr_t img) {
+  gfx->type = PCG_SET_COLOR_IMAGE;
+  gfx->data.color_image.fmt = fmt;
+  gfx->data.color_image.siz = siz;
+  gfx->data.color_image.width = width;
+  gfx->data.color_image.ptr = (void*)img;
+}
+
+UNUSED static void gDPSetFillColor(Gfx* gfx, u32 color) {
+  gfx->type = PCG_SET_FILL_COLOR;
+  gfx->data.data_32 = color;
+}
+
+UNUSED static void gDPFillRectangle(Gfx* gfx, s32 ulx, s32 uly, s32 lrx, s32 lry) {
+  gfx->type = PCG_DP_FILL_RECTANGLE;
+  gfx->data.fill_rectangle.ulx = ulx;
+  gfx->data.fill_rectangle.uly = uly;
+  gfx->data.fill_rectangle.lrx = lrx;
+  gfx->data.fill_rectangle.lry = lry;
+}
+
+UNUSED static void gDPFullSync(Gfx* gfx) {
+  gfx->type = PCG_FULL_SYNC;
+}
+
+#define gsSPTextureRectangle(a,b,c,d,e,f,g,h,i)\
+{\
+  .type = PCG_TEXTURE_RECTANGLE,\
+  .data.texture_rectangle.ulx = a,\
+  .data.texture_rectangle.uly = b,\
+  .data.texture_rectangle.lrx = c,\
+  .data.texture_rectangle.lry = d,\
+  .data.texture_rectangle.tile = e,\
+  .data.texture_rectangle.s = f,\
+  .data.texture_rectangle.t = g,\
+  .data.texture_rectangle.dsdx = h,\
+  .data.texture_rectangle.dtdy = i,\
+}
+
+UNUSED static void gSPTextureRectangle(Gfx* gfx, u32 ulx,u32 uly,u32 lrx,u32 lry,s32 tile,s32 s,s32 t,s32 dsdx,s32 dtdy) {
+  gfx->type = PCG_TEXTURE_RECTANGLE;
+  gfx->data.texture_rectangle.ulx = ulx;
+  gfx->data.texture_rectangle.uly = uly;
+  gfx->data.texture_rectangle.lrx = lrx;
+  gfx->data.texture_rectangle.lry = lry;
+  gfx->data.texture_rectangle.tile = tile;
+  gfx->data.texture_rectangle.s = s;
+  gfx->data.texture_rectangle.t = t;
+  gfx->data.texture_rectangle.dsdx = dsdx;
+  gfx->data.texture_rectangle.dtdy = dtdy;
+}
+
+#define gsDPSetTile(a,b,c,d,e,f,g,h,i,j,k,l) \
+{ \
+  .type = PCG_SET_TILE, \
+  .data.set_tile.fmt = a, \
+  .data.set_tile.siz = b, \
+  .data.set_tile.line = c, \
+  .data.set_tile.tmem = d, \
+  .data.set_tile.tile = e, \
+  .data.set_tile.palette = f, \
+  .data.set_tile.cmt = g, \
+  .data.set_tile.maskt = h, \
+  .data.set_tile.shiftt = i, \
+  .data.set_tile.cms = j, \
+  .data.set_tile.masks = k, \
+  .data.set_tile.shifts = l, \
+}
+
+UNUSED static void gDPSetTile(Gfx* gfx, u32 fmt, u32 siz, u32 line, u32 tmem, u32 tile, u32 palette, u32 cmt, u32 maskt, u32 shiftt, u32 cms, u32 masks, u32 shifts) {
+  gfx->type = PCG_SET_TILE;
+  gfx->data.set_tile.fmt = fmt;
+  gfx->data.set_tile.siz = siz;
+  gfx->data.set_tile.line = line;
+  gfx->data.set_tile.tmem = tmem;
+  gfx->data.set_tile.tile = tile;
+  gfx->data.set_tile.palette = palette;
+  gfx->data.set_tile.cmt = cmt;
+  gfx->data.set_tile.maskt = maskt;
+  gfx->data.set_tile.shiftt = shiftt;
+  gfx->data.set_tile.cms = cms;
+  gfx->data.set_tile.masks = masks;
+  gfx->data.set_tile.shifts = shifts;
+}
+
+#define gsDPSetTileSize(a,b,c,d,e) \
+{ \
+  .type = PCG_SET_TILE_SIZE, \
+  .data.set_tile_size.tile = a, \
+  .data.set_tile_size.uls = b, \
+  .data.set_tile_size.ult = c, \
+  .data.set_tile_size.lrs = d, \
+  .data.set_tile_size.lrt = e, \
+}
+
+UNUSED static void gDPSetTileSize(Gfx *gfx, u32 tile, u32 uls, u32 ult, u32 lrs, u32 lrt) {
+  gfx->type = PCG_SET_TILE_SIZE;
+  gfx->data.set_tile_size.tile = tile;
+  gfx->data.set_tile_size.uls = uls;
+  gfx->data.set_tile_size.ult = ult;
+  gfx->data.set_tile_size.lrs = lrs;
+  gfx->data.set_tile_size.lrt = lrt;
+}
+
+#define gsDPLoadBlock(a,b,c,d,e) \
+{ \
+  .type = PCG_LOAD_BLOCK, \
+  .data.load_block.tile = a, \
+  .data.load_block.uls = b, \
+  .data.load_block.ult = c, \
+  .data.load_block.lrs = d, \
+  .data.load_block.dxt = e, \
+}
+
+UNUSED static void gDPLoadBlock(Gfx *gfx, u32 tile, u32 uls, u32 ult, u32 lrs, u32 dxt) {
+  gfx->type = PCG_LOAD_BLOCK;
+  gfx->data.load_block.tile = tile;
+  gfx->data.load_block.uls = uls;
+  gfx->data.load_block.ult = ult;
+  gfx->data.load_block.lrs = lrs;
+  gfx->data.load_block.dxt = dxt;
+}
+
+#define gsSPMatrix(a,b) {.type = PCG_MATRIX, .data.matrix.ptr = (void*)a, .data.matrix.param = b}
+
+#define gSPMatrix(a,b,c) gSPMatrix_(a,(uintptr_t)b,c)
+UNUSED static void gSPMatrix_(Gfx *gfx, uintptr_t matrix, u8 param) {
+  gfx->type = PCG_MATRIX;
+  gfx->data.matrix.ptr = (void*)matrix;
+  gfx->data.matrix.param = param;
+}
+
+UNUSED static void gSPPopMatrix(Gfx *gfx, u32 param) {
+  gfx->type = PCG_POP_MATRIX;
+  gfx->data.data_32 = param;
+}
+
+#define gsSPPerspNormalize(a) {.type = PCG_PERSP_NORMALIZE, .data.data_32 = a}
+UNUSED static void gSPPerspNormalize(Gfx* gfx, u16 scale) {
+  gfx->type = PCG_PERSP_NORMALIZE;
+  gfx->data.data_32 = scale;
+}
+
+
+#define gsDPSetEnvColor(aa,bb,c,d) {.type = PCG_SET_ENV_COLOR, \
+.data.rgba8.r = aa, .data.rgba8.g = bb, .data.rgba8.b = c, .data.rgba8.a = d}
+
+UNUSED static void gDPSetEnvColor(Gfx* gfx, u32 r, u32 g, u32 b, u32 a) {
+  gfx->type = PCG_SET_ENV_COLOR;
+  gfx->data.rgba8.r = r;
+  gfx->data.rgba8.g = g;
+  gfx->data.rgba8.b = b;
+  gfx->data.rgba8.a = a;
+}
+
+#define gsSPBranchList(a) \
+{ \
+  .type = PCG_BRANCH_LIST, \
+  .data.display_list = (void*)a, \
+}
+
+UNUSED static void gSPBranchList(Gfx* gfx, uintptr_t dl) {
+  gfx->type = PCG_BRANCH_LIST;
+  gfx->data.display_list = (void*)dl;
+}
+
+
+//#define gsDPLoadTextureBlock(a,b,c,d,e,f,g,h,i,j,k,l)
+//{
+//  .type = PCG_LOAD_TEX_BLOCK,
+//  .data.load_tex_block.timg = a,
+//  .data.load_tex_block.fmt = b,
+//  .data.load_tex_block.siz = c,
+//  .data.load_tex_block.width = d,
+//  .data.load_tex_block.height = e,
+//  .data.load_tex_block.pal = f,
+//  .data.load_tex_block.cms = g,
+//  .data.load_tex_block.cmt = h,
+//  .data.load_tex_block.masks = i,
+//  .data.load_tex_block.maskt = j,
+//  .data.load_tex_block.shifts = k,
+//  .data.load_tex_block.shiftt = l,
+//}
+
+//#define gDPLoadTextureBlock(a,b,c,d,e,f,g,h,i,j,k,l,m) gDPLoadTextureBlock_(a,(void*)b,c,d,e,f,g,h,i,j,k,l,m)
+//UNUSED static void gDPLoadTextureBlock_(Gfx* gfx, void* timg, u32 fmt, u32 siz, u32 width,
+//  u32 height, u32 pal, u32 cms, u32 cmt, u32 masks, u32 maskt, u32 shifts, u32 shiftt) {
+//  gfx->type = PCG_LOAD_TEX_BLOCK;
+//  gfx->data.load_tex_block.timg = timg;
+//  gfx->data.load_tex_block.fmt = fmt;
+//  gfx->data.load_tex_block.siz = siz;
+//  gfx->data.load_tex_block.width = width;
+//  gfx->data.load_tex_block.height = height;
+//  gfx->data.load_tex_block.pal = pal;
+//  gfx->data.load_tex_block.cms = cms;
+//  gfx->data.load_tex_block.cmt = cmt;
+//  gfx->data.load_tex_block.masks = masks;
+//  gfx->data.load_tex_block.maskt = maskt;
+//  gfx->data.load_tex_block.shifts = shifts;
+//  gfx->data.load_tex_block.shiftt = shiftt;
+//}
+
+#define gsSPLight(a,b) \
+{ \
+  .type = PCG_LIGHT, \
+  .data.light.l = (Light*)a, \
+  .data.light.n = b, \
+}
+
+#define gsSP2Triangles(a,b,c,d,e,f,g,h) \
+{ \
+  .type = PCG_TWO_TRIANGLES, \
+  .data.two_triangles.v00 = a, \
+  .data.two_triangles.v01 = b, \
+  .data.two_triangles.v02 = c, \
+  .data.two_triangles.flag0 = d, \
+  .data.two_triangles.v10 = e, \
+  .data.two_triangles.v11 = f, \
+  .data.two_triangles.v12 = g, \
+  .data.two_triangles.flag1 = h, \
+}
+
+#define gsSPGeometryMode(a,b) \
+{ \
+  .type = PCG_GEOM_MODE, \
+  .data.geom_mode_sc.c = a, \
+  .data.geom_mode_sc.s = b, }
+
+#define gsDPSetFogColor(aa,bb,c,d) {.type = PCG_SET_FOG_COLOR, \
+.data.rgba8.r = aa, .data.rgba8.g = bb, .data.rgba8.b = c, .data.rgba8.a = d}
+
+#define gsDPSetBlendColor(aa,bb,c,d) {.type = PCG_SET_BLEND_COLOR, \
+.data.rgba8.r = aa, .data.rgba8.g = bb, .data.rgba8.b = c, .data.rgba8.a = d}
+
+#define gsSPFogPosition(a,b){.type = PCG_SET_FOG_POS, .data.set_fog_pos.minimum = a, .data.set_fog_pos.maximum = b}
+
+// stubs
+
+#define gsDPPipeSync() \
+{ \
+  .type = PCG_NO_OP, \
+}
+UNUSED static void gDPPipeSync(Gfx* gfx) {
+  // No need
+  gfx->type = PCG_NO_OP;
+}
+
+UNUSED static void gDPPipelineMode(Gfx* gfx, u32 a) {
+  (void)a;
+  // don't think this matters, so I will make it a NOP.
+  gfx->data.data_32 = 1;
+  gfx->type = PCG_NO_OP;
+}
+
+UNUSED static void gDPSetColorDither(Gfx* gfx, u32 a) {
+  (void)a;
+  // don't think this matters, so I will make it a NOP.
+  gfx->data.data_32 = 2;
+  gfx->type = PCG_NO_OP;
+}
+
+
+// don't think this matters, so I will make it a NOP.
+#define gsDPSetCycleType(a) \
+{ \
+  .data.data_32 = 3, \
+  .type = PCG_NO_OP, \
+}
+
+UNUSED static void gDPSetCycleType(Gfx* gfx, u32 a) {
+  (void)a;
+  // don't think this matters, so I will make it a NOP.
+  gfx->data.data_32 = 3;
+  gfx->type = PCG_NO_OP;
+}
+
+#define gsSPSetGeometryMode(a) \
+{ \
+  .data.data_32 = a, \
+  .type = PCG_SET_GEOM_MODE, \
+}
+
+UNUSED static void gSPSetGeometryMode(Gfx* gfx, u32 a) {
+  gfx->data.data_32 = a;
+  gfx->type = PCG_SET_GEOM_MODE;
+}
+
+#define gsDPTileSync() \
+{ \
+  .type = PCG_NO_OP, \
+}
+
+UNUSED static void gDPTileSync(Gfx* gfx) {
+  gfx->type = PCG_NO_OP;
+}
+
+#define gsDPLoadSync() \
+{ \
+  .type = PCG_NO_OP, \
+}
+
+UNUSED static void gDPLoadSync(Gfx* gfx) {
+  gfx->type = PCG_NO_OP;
+}
+
+UNUSED static void gSPSegment(Gfx* gfx, s32 seg, uintptr_t base) {
+  (void)seg;
+  (void)base;
+  gfx->type = PCG_NO_OP;
+}
+
+#define gsSPFogFactor(a,b) \
+{ \
+  .data.data_32 = 5, \
+  .type = PCG_NO_OP, \
+}
+
+// others
+#define gsSPSetLights1(name)						\
+	gsSPNumLights(NUMLIGHTS_1),					\
+	gsSPLight(&name.l[0],1),					\
+	gsSPLight(&name.a,2)
+
+#define gsSPGeometryModeSetFirst(c, s)	gsSPGeometryMode(c, s)
+
+#define	gDPLoadTextureBlock(pkt, timg, fmt, siz, width, height,		\
+		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
+{									\
+	gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);	\
+	gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 	\
+		0 , cmt, maskt, shiftt, cms, masks, shifts);		\
+	gDPLoadSync(pkt);						\
+	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, 				\
+		(((width)*(height) + siz##_INCR) >> siz##_SHIFT) -1,	\
+		CALC_DXT(width, siz##_BYTES)); 				\
+	gDPPipeSync(pkt);						\
+	gDPSetTile(pkt, fmt, siz,					\
+		(((width) * siz##_LINE_BYTES)+7)>>3, 0,			\
+		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
+		shifts);						\
+	gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,			\
+		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
+		((height)-1) << G_TEXTURE_IMAGE_FRAC);			\
+}
+
+#define	gsDPLoadTextureBlock(timg, fmt, siz, width, height,		\
+		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
+									\
+	gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),		\
+	gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, 0, 			\
+		G_TX_LOADTILE, 	0 , cmt, maskt,	shiftt, cms, 		\
+		masks, shifts),						\
+	gsDPLoadSync(),							\
+	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 				\
+		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,	\
+		CALC_DXT(width, siz##_BYTES)), 				\
+	gsDPPipeSync(),							\
+	gsDPSetTile(fmt, siz, ((((width) * siz##_LINE_BYTES)+7)>>3), 0,	\
+		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
+		shifts),						\
+	gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,				\
+		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
+		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+
+#else
+/**************************************************************************
+ *									  *
+ *		 Copyright (C) 1994, Silicon Graphics, Inc.		  *
+ *									  *
+ *  These coded instructions, statements, and computer programs  contain  *
+ *  unpublished  proprietary  information of Silicon Graphics, Inc., and  *
+ *  are protected by Federal copyright law.  They  may  not be disclosed  *
+ *  to  third  parties  or copied or duplicated in any form, in whole or  *
+ *  in part, without the prior written consent of Silicon Graphics, Inc.  *
+ *									  *
+ **************************************************************************/
+/**************************************************************************
+ *
+ *  $Revision: 1.141 $
+ *  $Date: 1999/09/03 03:43:08 $
+ *  $Source: /exdisk2/cvs/N64OS/Master/cvsmdev2/PR/include/gbi.h,v $
+ *
+ **************************************************************************/
 
 /*
  * To use the F3DEX ucodes, define F3DEX_GBI before include this file.
@@ -75,13 +1500,13 @@
  *
  * IMPLEMENTATION NOTE:
  * There is another group of RDP commands that includes the triangle commands
- * generated by the RSP code. These are the raw commands the rasterizer 
- * hardware chews on, with slope info, etc. They will follow the RDP 
+ * generated by the RSP code. These are the raw commands the rasterizer
+ * hardware chews on, with slope info, etc. They will follow the RDP
  * ordering...
  *
  * IMPLEMENTATION NOTE:
- * The RDP hardware has some of these bit patterns wired up. If the hardware 
- * changes, we must adjust this table, likewise we can't change/add things 
+ * The RDP hardware has some of these bit patterns wired up. If the hardware
+ * changes, we must adjust this table, likewise we can't change/add things
  * once the hardware is frozen. (actually, the RDP hardware only looks at
  * the lower 6 bits of the command byte)
  *
@@ -198,7 +1623,7 @@
 #define G_TEXRECT		0xe4	/* -28 */
 
 
-/* 
+/*
  * The following commands are the "generated" RDP commands; the user
  * never sees them, the RSP microcode generates them.
  *
@@ -318,7 +1743,7 @@
  *
  * DO NOT USE THE LOW 8 BITS OF GEOMETRYMODE:
  * The weird bit-ordering is for the micro-code: the lower byte
- * can be OR'd in with G_TRI_SHADE (11001100) to construct 
+ * can be OR'd in with G_TRI_SHADE (11001100) to construct
  * the triangle command directly. Don't break it...
  *
  * DO NOT USE THE HIGH 8 BITS OF GEOMETRYMODE:
@@ -332,7 +1757,7 @@
  * appropriately and use primcolor to see anything.
  *
  * G_SHADING_SMOOTH enabled means use all 3 colors of the triangle.
- * If it is not set, then do 'flat shading', where only one vertex color 
+ * If it is not set, then do 'flat shading', where only one vertex color
  * is used (and all 3 vertices are set to that same color by the ucode)
  * See the man page for gSP1Triangle().
  *
@@ -866,27 +2291,27 @@
 	Z_CMP | Z_UPD | CVG_DST_FULL | ALPHA_CVG_SEL |		\
 	ZMODE_OPA |						\
 	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
-	
+
 #define	RM_ZB_XLU_SURF(clk)					\
 	Z_CMP | IM_RD | CVG_DST_FULL | FORCE_BL | ZMODE_XLU |	\
 	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_1MA)
-	
+
 #define	RM_ZB_OPA_DECAL(clk)					\
 	Z_CMP | CVG_DST_FULL | ALPHA_CVG_SEL | ZMODE_DEC |	\
 	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
-	
+
 #define	RM_ZB_XLU_DECAL(clk)					\
 	Z_CMP | IM_RD | CVG_DST_FULL | FORCE_BL | ZMODE_DEC |	\
 	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_1MA)
-	
+
 #define	RM_ZB_CLD_SURF(clk)					\
 	Z_CMP | IM_RD | CVG_DST_SAVE | FORCE_BL | ZMODE_XLU |	\
 	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_1MA)
-	
+
 #define	RM_ZB_OVL_SURF(clk)					\
 	Z_CMP | IM_RD | CVG_DST_SAVE | FORCE_BL | ZMODE_DEC |	\
 	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_1MA)
-	
+
 #define	RM_ZB_PCL_SURF(clk)					\
 	Z_CMP | Z_UPD | CVG_DST_FULL | ZMODE_OPA |		\
 	G_AC_DITHER | 						\
@@ -1079,7 +2504,7 @@
  * element, we can't depend on the C compiler to align things
  * properly.
  *
- * 64-bit structure alignment is enforced by wrapping structures with 
+ * 64-bit structure alignment is enforced by wrapping structures with
  * unions that contain a dummy "long long int".  Why this works is
  * explained in the ANSI C Spec, or on page 186 of the second edition
  * of K&R, "The C Programming Language".
@@ -1143,14 +2568,14 @@ typedef struct {
   /* 20 bytes for above */
 
   /* padding to bring structure size to 64 bit allignment */
-  char dummy[4]; 
+  char dummy[4];
 
 } uSprite_t;
 
-typedef union {	
+typedef union {
   uSprite_t  s;
 
-  /* Need to make sure this is 64 bit aligned */   
+  /* Need to make sure this is 64 bit aligned */
   long long int         force_structure_allignment[3];
 } uSprite;
 
@@ -1229,7 +2654,7 @@ typedef union {
  */
 #ifdef	F3DEX_GBI_2
 /* 0,4 are reserved by G_MTX */
-# define G_MV_MMTX	2	
+# define G_MV_MMTX	2
 # define G_MV_PMTX	6
 # define G_MV_VIEWPORT	8
 # define G_MV_LIGHT	10
@@ -1287,7 +2712,7 @@ typedef union {
 
 /*
  * These are offsets from the address in the dmem table
- */ 
+ */
 #define G_MWO_NUMLIGHT		0x00
 #define G_MWO_CLIP_RNX		0x04
 #define G_MWO_CLIP_RNY		0x0c
@@ -1369,7 +2794,7 @@ typedef union {
  *
  * Note: only directional (infinite) lights are currently supported.
  *
- * Note: the weird order is for the DMEM alignment benefit of 
+ * Note: the weird order is for the DMEM alignment benefit of
  * the microcode.
  *
  */
@@ -1689,7 +3114,7 @@ typedef struct {
 
 /*
  * Textured rectangles are 128 bits not 64 bits
- */	
+ */
 typedef struct {
     unsigned long w0;
     unsigned long w1;
@@ -1847,7 +3272,7 @@ typedef union {
                 gsDma1p(G_VTX, v, sizeof(Vtx)*(n), ((n)-1)<<4|(v0))
 #endif
 
-	
+
 #ifdef	F3DEX_GBI_2
 # define gSPViewport(pkt, v)	\
 		gDma2p((pkt), G_MOVEMEM, (v), sizeof(Vp), G_MV_VIEWPORT, 0)
@@ -2106,7 +3531,7 @@ typedef union {
 
 /***
  ***  1 Triangle
- ***/	
+ ***/
 #define gSP1Triangle(pkt, v0, v1, v2, flag)				\
 {									\
 	Gfx *_g = (Gfx *)(pkt);						\
@@ -2282,7 +3707,7 @@ typedef union {
  * Insert values into Matrix
  *
  * where = element of matrix (byte offset)
- * num   = new element (32 bit value replacing 2 int or 2 frac matrix 
+ * num   = new element (32 bit value replacing 2 int or 2 frac matrix
  *                                 componants
  */
 #ifdef	F3DEX_GBI_2
@@ -2310,7 +3735,7 @@ typedef union {
 #define	gsSPForceMatrix(mptr)						\
 	gsDma2p(G_MOVEMEM,(mptr),sizeof(Mtx),G_MV_MATRIX,0),		\
 	gsMoveWd(G_MW_FORCEMTX,0,0x00010000)
-	
+
 #else	/* F3DEX_GBI_2 */
 #define	gSPForceMatrix(pkt, mptr)					\
 {									\
@@ -2358,7 +3783,7 @@ typedef union {
 /*
  *  gSPBranchLessZ   Branch DL if (vtx.z) less than or equal (zval).
  *
- *  dl	 = DL branch to 
+ *  dl	 = DL branch to
  *  vtx  = Vertex
  *  zval = Screen depth
  *  near = Near plane
@@ -2405,7 +3830,7 @@ typedef union {
 /*
  *  gSPBranchLessZraw   Branch DL if (vtx.z) less than or equal (raw zval).
  *
- *  dl	 = DL branch to 
+ *  dl	 = DL branch to
  *  vtx  = Vertex
  *  zval = Raw value of screen depth
  */
@@ -2506,7 +3931,7 @@ typedef union {
 #define NUMLIGHTS_7	7
 /*
  * n should be one of: NUMLIGHTS_0, NUMLIGHTS_1, ..., NUMLIGHTS_7
- * NOTE: in addition to the number of directional lights specified, 
+ * NOTE: in addition to the number of directional lights specified,
  *       there is always 1 ambient light
  */
 #define gSPNumLights(pkt, n)						\
@@ -2518,7 +3943,7 @@ typedef union {
 #define LIGHT_2		2
 #define LIGHT_3		3
 #define LIGHT_4		4
-#define LIGHT_5		5	
+#define LIGHT_5		5
 #define LIGHT_6		6
 #define LIGHT_7		7
 #define LIGHT_8		8
@@ -2743,7 +4168,7 @@ typedef union {
  * min, max: range 0 to 1000: 0=nearplane, 1000=farplane
  * min is where fog begins (usually less than max and often 0)
  * max is where fog is thickest (usually 1000)
- * 
+ *
  */
 #define gSPFogFactor(pkt, fm, fo)				\
         gMoveWd(pkt, G_MW_FOG, G_MWO_FOG, 			\
@@ -2783,7 +4208,7 @@ typedef union {
 	 _SHIFTL((level),11,3) | _SHIFTL((tile),8,3) | _SHIFTL((on),1,7)),\
         (_SHIFTL((s),16,16) | _SHIFTL((t),0,16))			\
 }}
-/* 
+/*
  * Different version of SPTexture macro, has an additional parameter
  * which is currently reserved in the microcode.
  */
@@ -2822,7 +4247,7 @@ typedef union {
 	 _SHIFTL((level),11,3)|_SHIFTL((tile),8,3)|_SHIFTL((on),0,8)),	\
         (_SHIFTL((s),16,16)|_SHIFTL((t),0,16))				\
 }}
-/* 
+/*
  * Different version of SPTexture macro, has an additional parameter
  * which is currently reserved in the microcode.
  */
@@ -3049,7 +4474,7 @@ typedef union {
 	gsSPSetOtherMode(G_SETOTHERMODE_H, G_MDSFT_ALPHADITHER, 2, mode)
 #endif
 
-/* 'blendmask' is not supported anymore. 
+/* 'blendmask' is not supported anymore.
  * The bits are reserved for future use.
  * Fri May 26 13:45:55 PDT 1995
  */
@@ -3255,7 +4680,7 @@ typedef union {
  *
  * This command makes all othermode parameters set.
  * Do not use this command in the same DL with another g*SPSetOtherMode DLs.
- * 
+ *
  * [Usage]
  *	gDPSetOtherMode(pkt, modeA, modeB)
  *
@@ -3508,9 +4933,9 @@ typedef union {
 		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
 }
 
-/* 
+/*
  *  Allow tmem address and render tile to be specified.
- *  The S at the end means odd lines are already word Swapped 
+ *  The S at the end means odd lines are already word Swapped
  */
 #define	gDPLoadMultiBlockS(pkt, timg, tmem, rtile, fmt, siz, width, 	\
 		   height, pal, cms, cmt, masks, maskt, shifts, shiftt)	\
@@ -3726,13 +5151,13 @@ typedef union {
 		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
 		((height)-1) << G_TEXTURE_IMAGE_FRAC)
 
-/* 
+/*
  *  Allows tmem and render tile to be specified.  Useful when loading
  *  several tiles at a time.
  *
  *  Here is the static form of the pre-swapped texture block loading
  *  See gDPLoadTextureBlockS() for reference.  Basically, just don't
- *  calculate DxT, use 0 
+ *  calculate DxT, use 0
  */
 
 #define	gsDPLoadMultiBlockS(timg, tmem, rtile, fmt, siz, width, height,	\
@@ -3816,7 +5241,7 @@ typedef union {
 }
 
 /*
- *  4-bit load block.  Allows tmem and render tile to be specified.  Useful when  
+ *  4-bit load block.  Allows tmem and render tile to be specified.  Useful when
  *  loading multiple tiles.  The S means odd lines are already word swapped.
  */
 #define	gDPLoadMultiBlock_4bS(pkt, timg, tmem, rtile, fmt, width, height,\
@@ -4251,7 +5676,7 @@ typedef union {
                 G_IM_FMT_RGBA, G_IM_SIZ_16b, 4*16, 1,                   \
                 pal, 0, 0, 0, 0, 0, 0)
 
-#endif /* _HW_VERSION_1 */ 
+#endif /* _HW_VERSION_1 */
 
 /*
  *  Load a 256-entry palette (for 8-bit CI textures)
@@ -4293,7 +5718,7 @@ typedef union {
 	gsDPLoadSync(),							\
 	gsDPLoadTLUTCmd(G_TX_LOADTILE, 255),				\
 	gsDPPipeSync()
- 
+
 #else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
 
 #define gsDPLoadTLUT_pal256(dram)                                       \
@@ -4348,7 +5773,7 @@ typedef union {
                 G_IM_FMT_RGBA, G_IM_SIZ_16b, 4, count,                  \
                 0, 0, 0, 0, 0, 0, 0)
 
-#endif /* _HW_VERSION_1 */ 
+#endif /* _HW_VERSION_1 */
 
 #define gDPSetScissor(pkt, mode, ulx, uly, lrx, lry)			\
 {									\
@@ -4503,7 +5928,7 @@ typedef union {
 }}
 
 /* Notice that textured rectangles are 128-bit commands, therefore
- * gsDPTextureRectangle() should not be used in display lists 
+ * gsDPTextureRectangle() should not be used in display lists
  * under normal circumstances (use gsSPTextureRectangle()).
  * That is also why there is no gDPTextureRectangle() macros.
  */
@@ -4714,5 +6139,9 @@ typedef union {
 
 #endif /* _LANGUAGE_C */
 
+#endif
+
+
 
 #endif /* _GBI_H_ */
+

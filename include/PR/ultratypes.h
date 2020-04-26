@@ -37,6 +37,8 @@ typedef s32 intptr_t;
 typedef s32 ptrdiff_t;
 #else
 #include <stddef.h>
+typedef unsigned long int uintptr_t;
+typedef signed long int ssize_t;
 #endif
 
 #endif

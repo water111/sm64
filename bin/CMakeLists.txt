@@ -1,0 +1,19 @@
+add_library(bin
+        SHARED
+        cave.c
+        debug_level_select.c
+        effect.c
+        fire.c
+        generic.c
+        grass.c
+        inside.c
+        machine.c
+        mountain.c
+        outside.c
+        segment2.c
+        sky.c
+        snow.c
+        spooky.c
+        title_screen_bg.c
+        water.c
+        )

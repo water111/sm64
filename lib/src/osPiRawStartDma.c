@@ -4,6 +4,13 @@
 extern u32 osRomBase; // TODO: figure out why this is like this
 
 s32 osPiRawStartDma(s32 dir, u32 cart_addr, void *dram_addr, size_t size) {
+#ifdef PC_PORT
+    (void)dir;
+    (void)cart_addr;
+    (void)dram_addr;
+    (void)size;
+    return 0;
+#else
     register int status;
     status = HW_REG(PI_STATUS_REG, u32);
     while (status & (PI_STATUS_BUSY | PI_STATUS_IOBUSY | PI_STATUS_ERROR)) {
@@ -26,6 +33,7 @@ s32 osPiRawStartDma(s32 dir, u32 cart_addr, void *dram_addr, size_t size) {
             break;
     }
     return 0;
+#endif
 }
 
 #ifdef VERSION_EU

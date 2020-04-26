@@ -1,0 +1,14 @@
+add_library(audio
+        SHARED
+        data.c
+        effects.c
+        external.c
+        globals_end.c
+        globals_start.c
+        heap.c
+        load.c
+        playback.c
+        port_eu.c
+        seqplayer.c
+        synthesis.c
+        )

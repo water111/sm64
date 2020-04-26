@@ -46,6 +46,11 @@
 #define ALIGNED16
 #endif
 
+#ifdef PC_PORT
+#define VIRTUAL_TO_PHYSICAL(addr) ((uintptr_t)addr)
+#define PHYSICAL_TO_VIRTUAL(addr) ((uintptr_t)addr)
+#define VIRTUAL_TO_PHYSICAL2(addr) ((u8*)addr)
+#else
 // convert a virtual address to physical.
 #define VIRTUAL_TO_PHYSICAL(addr)   ((uintptr_t)(addr) & 0x1FFFFFFF)
 
@@ -54,5 +59,6 @@
 
 // another way of converting virtual to physical
 #define VIRTUAL_TO_PHYSICAL2(addr)  ((u8 *)(addr) - 0x80000000U)
+#endif
 
 #endif

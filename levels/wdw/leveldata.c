@@ -36,3 +36,15 @@
 #include "levels/wdw/rotating_platform/collision.inc.c"
 #include "levels/wdw/areas/1/movtext.inc.c"
 #include "levels/wdw/areas/2/movtext.inc.c"
+
+#ifdef PC_PORT
+u32 so_wdw_seg7_area_1_collision = sizeof(wdw_seg7_area_1_collision);
+u32 so_wdw_seg7_area_2_collision = sizeof(wdw_seg7_area_2_collision);
+u32 so_wdw_seg7_collision_square_floating_platform = sizeof(wdw_seg7_collision_square_floating_platform);
+u32 so_wdw_seg7_collision_arrow_lift = sizeof(wdw_seg7_collision_arrow_lift);
+u32 so_wdw_seg7_collision_070184C8 = sizeof(wdw_seg7_collision_070184C8);
+u32 so_wdw_seg7_collision_07018528 = sizeof(wdw_seg7_collision_07018528);
+u32 so_wdw_seg7_collision_express_elevator_platform = sizeof(wdw_seg7_collision_express_elevator_platform);
+u32 so_wdw_seg7_collision_rect_floating_platform = sizeof(wdw_seg7_collision_rect_floating_platform);
+u32 so_wdw_seg7_collision_070186B4 = sizeof(wdw_seg7_collision_070186B4);
+#endif

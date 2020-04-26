@@ -34,6 +34,10 @@ u32 string_to_u32(u8 *str) {
 }
 
 void send_packet(u8 *a0, s32 a1) {
+#ifdef PC_PORT
+    (void)a0;
+    (void)a1;
+#else
     unkStruct sp1c;
     s32 i;
     sp1c.unk00 = 2;
@@ -45,9 +49,14 @@ void send_packet(u8 *a0, s32 a1) {
         ;
     }
     *(volatile u32 *) 0xc000000c = 0;
+#endif
 }
 
 void send(u8 *buff, s32 len) {
+#ifdef PC_PORT
+    (void)buff;
+    (void)len;
+#else
     s32 i;
     s32 end;
     s32 rem;
@@ -67,6 +76,7 @@ void send(u8 *buff, s32 len) {
     if (rem > 0) {
         send_packet(&buff[end], rem);
     }
+#endif
 }
 void process_command_memory() {
     u32 sp1c;

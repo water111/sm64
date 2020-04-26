@@ -29,9 +29,13 @@ void osDestroyThread(OSThread *thread) {
         }
     }
 
+#ifndef PC_PORT
     if (thread == D_803348A0) {
         __osDispatchThread();
     }
 
     __osRestoreInt(int_disabled);
+#else
+    (void)int_disabled;
+#endif
 }
