@@ -33,13 +33,13 @@ static std::string orange_frag_shader = R"(
 
 #version 330 core
 
-out vec4 gl_FragColor;
+out vec4 fragColor;
 
 uniform vec3 debug_color;
 
 
 void main() {
-  gl_FragColor = vec4(debug_color.x, debug_color.y, debug_color.z, 1.0);
+  fragColor = vec4(debug_color.x, debug_color.y, debug_color.z, 1.0);
 }
 
 )";
@@ -72,12 +72,12 @@ static std::string shadeonly_frag_shader = R"(
 
 #version 330 core
 
-out vec4 gl_FragColor;
+out vec4 fragColor;
 
 in vec4 fragment_color;
 
 void main() {
-  gl_FragColor = fragment_color;
+  fragColor = fragment_color;
 }
 
 )";
@@ -112,17 +112,17 @@ static std::string shade_only_frag_shader = R"(
 
 #version 330 core
 
-out vec4 gl_FragColor;
+out vec4 fragColor;
 in vec4 fragment_color;
 in vec2 tex_coord;
 
 uniform sampler2D debug_tex;
 
 void main() {
-  gl_FragColor = vec4(fragment_color.x * texture(debug_tex, tex_coord).r, fragment_color.y * texture(debug_tex, tex_coord).g, fragment_color.z * texture(debug_tex, tex_coord).b, fragment_color.w);
-  //gl_FragColor = vec4(texture(debug_tex, tex_coord).r, texture(debug_tex, tex_coord).g, texture(debug_tex, tex_coord).b, fragment_color.w);
-  //gl_FragColor = texture(debug_tex, tex_coord);
-  //gl_FragColor = vec4(fragment_color.x,  texture(debug_tex, tex_coord).g, texture(debug_tex, tex_coord).b, 1.0);
+  fragColor = vec4(fragment_color.x * texture(debug_tex, tex_coord).r, fragment_color.y * texture(debug_tex, tex_coord).g, fragment_color.z * texture(debug_tex, tex_coord).b, fragment_color.w);
+  //fragColor = vec4(texture(debug_tex, tex_coord).r, texture(debug_tex, tex_coord).g, texture(debug_tex, tex_coord).b, fragment_color.w);
+  //fragColor = texture(debug_tex, tex_coord);
+  //fragColor = vec4(fragment_color.x,  texture(debug_tex, tex_coord).g, texture(debug_tex, tex_coord).b, 1.0);
 }
 
 )";
@@ -159,7 +159,7 @@ void main() {
 static std::string super_frag_shader = R"(
 #version 330 core
 
-out vec4 gl_FragColor;
+out vec4 fragColor;
 in vec4 SH;
 in vec2 tex_coord;
 
@@ -201,7 +201,7 @@ void main() {
   else if(c_idx == 1) c = SH.a;
   else if(c_idx == 2) c = ENV.a;
 
-  gl_FragColor = vec4(A*B + C, a*b + c);
+  fragColor = vec4(A*B + C, a*b + c);
 }
   )";
 
